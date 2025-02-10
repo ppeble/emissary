@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric import dsa, ec, rsa
 from ambassador import IR, Cache, Config, EnvoyConfig
 from ambassador.compile import Compile
 from ambassador.fetch import ResourceFetcher
-from ambassador.utils import NullSecretHandler
+from ambassador.utils import NullSecretHandler, SavedSecret
 
 logger = logging.getLogger("ambassador")
 
@@ -374,3 +374,24 @@ def create_crl_pem_b64(issuerCert, issuerKey, revokedCerts):
 
     crl = crl_builder.sign(private_key=key, algorithm=hashes.SHA256())
     return b64encode(crl.public_bytes(serialization.Encoding.PEM)).decode("utf-8")
+
+
+def generate_istio_cert_delta(delta_type="update"):
+    return {
+                "kind": "Secret",
+                "name": "istio-certs",
+                "namespace": "ambassador",
+                "deltaType": delta_type,
+            }
+
+
+def generate_istio_saved_secret():
+    return SavedSecret(
+        secret_name="test-secret",
+        namespace="default",
+        cert_path="//test-secret-123.crt",
+        key_path="//test-secret-123.key",
+        user_path="//test-secret-123.user",
+        root_cert_path="//test-secret-123.root.crt",
+        cert_data={"tls_crt": "tls_crt", "tls_key": "tls_key", "user_key": "user_key", "root_crt": "root_crt"}
+    )
