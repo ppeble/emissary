@@ -88,17 +88,7 @@ runs:
         set -euo pipefail
 
         # install uv
-        curl -fsSL https://astral.sh/uv/install.sh | bash
-
-        # update the current PATH to include uv's bin directory
-        if ! echo "${PATH}" | grep -q "${HOME}/.local/bin"; then
-            export PATH="${PATH}:${HOME}/.local/bin"
-        fi
-
-        # propagate the updated path to downstream steps/actions/workflows
-        if [[ -f "${GITHUB_PATH}" ]] && ! grep -q "${HOME}/.local/bin" "${GITHUB_PATH}"; then
-            echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-        fi
+        curl -fsSL https://astral.sh/uv/install.sh | sudo -E bash
 
         # install Python requirements
         uv sync --dev
