@@ -30,7 +30,8 @@ permissions:
   contents: read
 
 jobs:
-  charts:
+  build-charts:
+    name: Build Helm Charts
     runs-on: ubuntu-latest
 
     outputs:
