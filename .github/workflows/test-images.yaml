@@ -59,21 +59,25 @@ jobs:
           # Verify cluster is ready
           kubectl cluster-info --context k3d-test-cluster-${{ matrix.arch }}
 
-      - name: Prepare artifacts directory
+      - name: Prepare Artifacts Directory
         shell: bash
         run: |-
           mkdir -p ${{ github.workspace }}/artifacts/images
 
-      - name: Download Docker Image Artifact
+      - name: Download Docker Image Artifacts
         uses: actions/download-artifact@v6
         with:
           name: ${{ inputs.artifact-bundle-prefix }}-${{ matrix.arch }}
           path: ${{ github.workspace }}/artifacts/images
 
-      - name: Load Images into k3d cluster
+      - id: load-k3d-images
+        name: Load Images into k3d cluster
         run: |
+          echo 'Loading images from:'
+          ls ${{ github.workspace }}/artifacts/images/
+
           # Import the image tarballs directly into k3d cluster
-          k3d image import ${{ github.workspace }}/artifacts/images/*-${{ matrix.arch }}.tar -c test-cluster-${{ matrix.arch }}
+          k3d image import ${{ github.workspace }}/artifacts/images/*-${{ matrix.arch }}-image.tar -c test-cluster-${{ matrix.arch }}
 
           echo "Images imported into k3d cluster"
 
