@@ -5,10 +5,26 @@ on:
   workflow_call:
     inputs:
       ref:
-        description: 'Git ref to checkout'
-        required: false
         type: string
+        required: false
         default: ${{ github.ref }}
+        description: Git ref to checkout
+
+    outputs:
+      artifact-id:
+        value: ${{ jobs.build-charts.outputs.artifact-id }}
+        description: GitHub ID of the built chart(s) artifact
+      artifact-url:
+        value: ${{ jobs.build-charts.outputs.artifact-url }}
+        description: >-
+          URL to download the built chart(s) artifact. Can be used in many scenarios
+          such as linking to charts built by a specific CI run in issues or pull requests.
+          Users must be logged-in in order for this URL to work. This URL is valid as
+          long as the chart(s) artifact has not expired or the chart(s) artifact, run
+          or repository have not been deleted.
+      artifact-digest:
+        value: ${{ jobs.build-charts.outputs.artifact-digest }}
+        description: SHA-256 digest of the built chart(s) artifact
 
 permissions:
   contents: read
@@ -16,7 +32,12 @@ permissions:
 jobs:
   charts:
     runs-on: ubuntu-latest
-    name: Charts
+
+    outputs:
+      artifact-id: ${{ steps.upload-chart-artifacts.outputs.artifact-id }}
+      artifact-url: ${{ steps.upload-chart-artifacts.outputs.artifact-url }}
+      artifact-digest: ${{ steps.upload-chart-artifacts.outputs.artifact-digest }}
+
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v5
