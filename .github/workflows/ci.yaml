@@ -3,17 +3,63 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches:
-      - dev/v4
     tags:
-      - 'v4.**' # Triggers on any tag like v4.0.0, v4.1.2-rc.1, etc.
+      - v4.** # Triggers on any tag like v4.0.0, v4.1.2-rc.1, etc.
+    branches:
+      - dev/v4/*
 
   pull_request:
-    types: [opened, synchronize, reopened] # The pull request events to listen for
+    types: # The pull request events to listen for
+      - opened
+      - reopened
+      - synchronize
     branches:
-      - 'dev/v4' # The base branch that the pull request is targeting
+      - dev/v4/main # The base branch that the pull request is targeting
 
   workflow_dispatch: # Allows manual triggering of the workflow
+    inputs:
+      ref:
+        type: string
+        default: ""
+        required: false
+        description: Git ref to checkout
+      debug:
+        type: boolean
+        default: false
+        required: false
+        description: |
+          Enable upterm debugging if running locally with netkos/act
+      components:
+        type: string
+        required: false
+        description: |-
+          The list of components to build images for, formatted as a space-separated list of strings.
+
+          Defaults to: apiext emissary kat-client kat-server test-auth test-shadow test-stats
+        default: >-
+          apiext
+          emissary
+          kat-client
+          kat-server
+          test-auth
+          test-shadow
+          test-stats
+      chart-registry:
+        type: string
+        required: false
+        default: ghcr.io/emissary-ingress
+        description: |
+          OCI repository to push charts to
+
+          Defaults to: ghcr.io/emissary-ingress
+      image-registry:
+        type: string
+        required: false
+        default: ghcr.io/emissary-ingress
+        description: |
+          OCI repository to push images to
+
+          Defaults to: ghcr.io/emissary-ingress
 
 permissions:
   contents: read
@@ -43,7 +89,7 @@ jobs:
 
   build-charts:
     name: Build Charts
-    uses: ./.github/workflows/charts.yaml
+    uses: ./.github/workflows/build-charts.yaml
     with:
       ref: ${{ github.ref }}
 
@@ -51,21 +97,35 @@ jobs:
     name: Build Images
     uses: ./.github/workflows/build-images.yaml
     with:
-      ref: ${{ github.ref }}
+      ref: ${{ inputs.ref || github.ref }}
+      debug: ${{ inputs.debug || false }}
+      components: ${{ inputs.components || 'apiext emissary kat-client kat-server test-auth test-shadow test-stats' }}
+      artifact-bundle-prefix: images-${{ github.sha }}
 
   test-images:
     name: Test Images
-    needs: build-images
+    needs:
+      - build-images
     uses: ./.github/workflows/test-images.yaml
     with:
       ref: ${{ github.ref }}
-      artifact-name-prefix: ${{ needs.build-images.outputs.artifact-name-prefix }}
+      artifact-bundle-prefix: images-${{ github.sha }}
 
   release:
     name: Release
-    needs: [lint, gotest, pytest, build-images, test-images]
-    if: startsWith(github.ref, 'refs/tags/v4.') && !contains(github.ref_name, '-')
-    uses: ./.github/workflows/release.yaml
-    with:
-      ref: ${{ github.ref }}
+    if: ${{ (startsWith(github.ref, 'refs/tags/v4.') && !contains(github.ref_name, '-')) || (vars.act =='true' && vars.do_release == 'true') }}
     secrets: inherit
+    uses: ./.github/workflows/release.yaml
+    needs:
+      - lint
+      - gotest
+      - pytest
+      - build-charts
+      - build-images
+      - test-images
+    with:
+      ref: ${{ inputs.ref || github.ref }}
+      debug: ${{ inputs.debug || false }}
+      components: ${{ needs.build-images.outputs.components }}
+      chart-registry: ${{ inputs.chart-registry || 'ghcr.io/emissary-ingress' }}
+      image-registry: ${{ inputs.chart-registry || 'ghcr.io/emissary-ingress' }}
