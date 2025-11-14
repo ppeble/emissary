@@ -1,17 +1,61 @@
+---
 name: Build Docker Images (Reusable)
 
 on:
   workflow_call:
     inputs:
       ref:
-        description: 'Git ref to checkout'
-        required: false
         type: string
+        required: false
         default: ${{ github.ref }}
+        description: Git ref to checkout
+      debug:
+        type: boolean
+        required: false
+        default: false
+        description: |
+          Enable upterm debugging
+
+          NOTE: only available when running locally with netkos/act
+      components:
+        type: string
+        required: false
+        description: |-
+          The list of components to build images for, formatted as a space-separated list of strings.
+
+          Defaults to: apiext emissary kat-client kat-server test-auth test-shadow test-stats
+        default: >-
+          apiext
+          emissary
+          kat-client
+          kat-server
+          test-auth
+          test-shadow
+          test-stats
+      artifact-bundle-prefix:
+        type: string
+        required: true
+        description: Prefix for arch-specific artifact bundle name
+
     outputs:
-      artifact-name-prefix:
-        description: 'Prefix for artifact names'
-        value: ${{ jobs.build-images.outputs.artifact-name-prefix }}
+      components:
+        value: ${{ jobs.build-images.outputs.components }}
+        description: >-
+          The list of components images were built for, formatted as a space-separated list of strings.
+      artifact-id:
+        value: ${{ jobs.build-images.outputs.artifact-id }}
+        description: GitHub ID of the built image artifact(s)
+      artifact-url:
+        value: ${{ jobs.build-images.outputs.artifact-url }}
+        description: >-
+          URL to download the built images artifact. Can be used in many scenarios
+          such as linking to images built by a specific CI run in issues or pull requests.
+          Users must be logged-in in order for this URL to work. This URL is valid as
+          long as the images artifact has not expired or the images artifact, run
+          or repository have not been deleted.
+      artifact-digest:
+        value: ${{ jobs.build-images.outputs.artifact-digest }}
+        description: SHA-256 digest of the built images artifact
 
 permissions:
   contents: read
@@ -31,7 +75,10 @@ jobs:
             runner: ubuntu-24.04-arm
 
     outputs:
-      artifact-name-prefix: ${{ steps.set-outputs.outputs.artifact-name-prefix }}
+      components: ${{ inputs.components }}
+      artifact-id: ${{ steps.upload-image-tarballs.outputs.artifact-id }}
+      artifact-url: ${{ steps.upload-image-tarballs.outputs.artifact-url }}
+      artifact-digest: ${{ steps.upload-image-tarballs.outputs.artifact-digest }}
 
     steps:
       - name: Checkout
