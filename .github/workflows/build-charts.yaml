@@ -32,10 +32,6 @@ jobs:
         run: |
           make charts
 
-      - name: Collect Job Logs
-        uses: ./.github/actions/collect-logs
-        if: always()
-
       - name: Collect Chart Artifacts
         shell: bash
         run: |
