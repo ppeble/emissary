@@ -67,7 +67,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        arch:
+          - amd64
+          - arm64
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -81,67 +83,113 @@ jobs:
       artifact-digest: ${{ steps.upload-image-tarballs.outputs.artifact-digest }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - id: checkout-repo
+        name: Checkout
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
 
-      - name: Install Deps
+      - id: install-deps
+        name: Install Deps
         uses: ./.github/actions/setup-deps
+        if: ${{ steps.checkout-repo.outcome == 'success' }}
 
-      - name: Set up Docker Buildx
+      - id: setup-docker-buildx
+        name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        if: ${{ steps.install-deps.outcome == 'success' }}
 
-      - name: Install GoReleaser
+      - id: install-goreleaser
+        name: Install GoReleaser
+        if: ${{ steps.setup-docker-buildx.outcome == 'success' }}
         uses: goreleaser/goreleaser-action@v6
         with:
           version: ~> v2
           install-only: true
           distribution: goreleaser
 
-      - name: Generate GoReleaser Config
-        run: |
-          python make-gorel.py \
-              --header gorel.prologue \
-              --arch ${{ matrix.arch }} \
-            > .goreleaser.yaml
+      - id: generate-goreleaser-config
+        name: Generate GoReleaser Config
+        if: ${{ steps.install-goreleaser.outcome == 'success' }}
+        continue-on-error: ${{ inputs.debug }}
+        run: >-
+          uv run -- python make-gorel.py
+          --header gorel.prologue
+          --arch ${{ matrix.arch }}
+          > .goreleaser.yaml
 
-      - name: GoReleaser Check(s)
+      - id: goreleaser-check
+        name: GoReleaser Check(s)
+        if: ${{ steps.generate-goreleaser-config.outcome == 'success' }}
+        continue-on-error: ${{ inputs.debug }}
         shell: bash
         run: |
           goreleaser check
           goreleaser healthcheck
 
-      - name: GoReleaser Build
+      - id: goreleaser-build
+        name: GoReleaser Build
+        if: ${{ steps.goreleaser-check.outcome == 'success' }}
+        continue-on-error: ${{ inputs.debug }}
         run: |
           goreleaser release --clean --snapshot
 
-      - name: Save Docker Image to Tarball and Upload
+      - id: save-image-tarballs
+        name: Save Docker Image to Tarball and Upload
+        if: ${{ steps.goreleaser-build.outcome == 'success' }}
+        continue-on-error: ${{ inputs.debug }}
+        shell: bash
+        env:
+          JQ_FILTER: |-
+            map(
+                select(
+                    # filter tags that look like version numbers suffixed with the short-sha
+                    # of the current commit and the current architecture (e.x. amd64 or arm64)
+                    (.Tag | test("^v?[0-9][.].+-\(env.SHORT_SHA)[^-]*-${{ matrix.arch }}"; "i"))
+
+                    # filter for images from the 'ghcr.io/emissary-ingress' repository that
+                    # also match one of the components goreleaser was configured to build for
+                    and (.Repository | test("^ghcr.io/emissary-ingress/(\(env.COMPONENTS))"; "i"))
+                )
+
+                # format the standard 'repository:tag' specifier
+                # for each image that matched the filter critera
+                | "\(.Repository):\(.Tag)"
+
+            # print the filtered image tags as a tab-separated list (because the @sh function
+            # will wrap each value in single quotes, which is even less helpful for script use)
+            ) | @tsv
         run: |
+          set -euo pipefail
+
+          trap 'STATUS=${?}; echo >&2 "${0}: Error on line "${LINENO}": ${BASH_COMMAND}"; exit ${STATUS}' ERR
+
+          mkdir -p ${{ github.workspace }}/artifacts/images
+
           docker images
 
-          docker save \
-              ghcr.io/emissary-ingress/apiext:latest-${{ matrix.arch }} \
-              ghcr.io/emissary-ingress/emissary:latest-${{ matrix.arch }} \
-              ghcr.io/emissary-ingress/kat-client:latest-${{ matrix.arch }} \
-              ghcr.io/emissary-ingress/kat-server:latest-${{ matrix.arch }} \
-              ghcr.io/emissary-ingress/test-auth:latest-${{ matrix.arch }} \
-              ghcr.io/emissary-ingress/test-shadow:latest-${{ matrix.arch }} \
-              ghcr.io/emissary-ingress/test-stats:latest-${{ matrix.arch }} \
-            -o images-${{ matrix.arch }}.tar
+          export SHORT_SHA="${GITHUB_SHA:0:8}"
+          export COMPONENTS="$(echo '${{ inputs.components }}' | tr '[:space:]' '|')"
 
-          echo "DOCKER_TARBALL_NAME=images-${{ matrix.arch }}.tar" >> $GITHUB_ENV
+          COMPONENT_IMAGES=($(docker images --no-trunc --format json | jq -sr "${JQ_FILTER}" | tr '\t' ' '))
 
-      - name: Set outputs
-        id: set-outputs
-        run: |
-          echo "artifact-name-prefix=images-${{ github.sha }}" >> $GITHUB_OUTPUT
+          for IMAGE in ${COMPONENT_IMAGES[@]}; do
+              COMPONENT="$(echo "${IMAGE}" | tr ':' '/' | cut -d'/' -f3)"
+              IMAGE_PATH="${{ github.workspace }}/artifacts/images/${COMPONENT}-${{ matrix.arch }}-image.tar"
 
-      - name: Upload Docker Image Artifact
-        uses: actions/upload-artifact@v4
+              docker save "${IMAGE}" -o "${IMAGE_PATH}" \
+              || { EXIT_CODE=$?; echo "failed to save image tarball for: ${COMPONENT}" 1>&2; exit ${EXIT_CODE}; }
+
+              printf 'saved image tarball:\n\tcomponent: %s\n\tpath: %s\n\timage: %s\n' "${COMPONENT}" "${IMAGE_PATH}" "${IMAGE}"
+          done
+
+      - id: upload-image-tarballs
+        name: Upload Docker Image Artifact
+        if: ${{ steps.save-image-tarballs.outcome == 'success' }}
+        continue-on-error: ${{ inputs.debug }}
+        uses: actions/upload-artifact@v5
         with:
-          name: images-${{ github.sha }}-${{ matrix.arch }}
-          path: ${{ env.DOCKER_TARBALL_NAME }}
+          name: ${{ inputs.artifact-bundle-prefix }}-${{ matrix.arch }}
           retention-days: 7
           if-no-files-found: error
