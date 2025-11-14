@@ -35,14 +35,14 @@ jobs:
       - name: Collect Chart Artifacts
         shell: bash
         run: |
-          mkdir /tmp/charts
-          cp ./charts/*.tgz /tmp/charts
-          tar cf /tmp/charts.tar -C /tmp charts
+          mkdir -p ${{ github.workspace }}/artifacts/charts
+          mv charts/*.tgz ${{ github.workspace }}/artifacts/charts/
 
-      - name: Upload Chart Tarball
-        uses: actions/upload-artifact@v4
+      - id: upload-chart-artifacts
+        name: Upload Chart Tarball
+        uses: actions/upload-artifact@v5
         with:
-          name: charts.tar
-          path: /tmp/charts.tar
+          name: charts
           retention-days: 7
           if-no-files-found: error
+          path: ${{ github.workspace }}/artifacts/charts/*.tgz
