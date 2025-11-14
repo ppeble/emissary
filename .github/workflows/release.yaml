@@ -198,13 +198,19 @@ jobs:
         if: ${{ env.ACT && inputs.debug && failure() }}
         uses: ./.github/actions/local-debug
 
+#      - id: release-artifacts
+#        name: Release
+#        if: ${{ !env.ACT }}
+#        uses: softprops/action-gh-release@v2
+#        with:
+#          make_latest: true
+#          fail_on_unmatched_files: true
+#          tag_name: ${{ inputs.release-tag }}
+#          files: |
+#            ${{ github.workspace }}/artifacts/*
+
       - id: release-artifacts
         name: Release
-        if: ${{ !env.ACT }}
-        uses: softprops/action-gh-release@v2
-        with:
-          make_latest: true
-          fail_on_unmatched_files: true
-          tag_name: ${{ inputs.release-tag }}
-          files: |
-            ${{ github.workspace }}/artifacts/*
+        shell: bash
+        run: |
+          echo "declining to cut an actual GitHub release for the moment"
