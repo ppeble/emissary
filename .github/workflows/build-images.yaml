@@ -136,7 +136,7 @@ jobs:
           goreleaser release --clean --snapshot
 
       - id: save-image-tarballs
-        name: Save Docker Image to Tarball and Upload
+        name: Export Docker Image Tarballs
         if: ${{ steps.goreleaser-build.outcome == 'success' }}
         continue-on-error: ${{ inputs.debug }}
         shell: bash
@@ -185,7 +185,7 @@ jobs:
           done
 
       - id: upload-image-tarballs
-        name: Upload Docker Image Artifact
+        name: Upload Docker Image Artifacts
         if: ${{ steps.save-image-tarballs.outcome == 'success' }}
         continue-on-error: ${{ inputs.debug }}
         uses: actions/upload-artifact@v5
