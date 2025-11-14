@@ -6,7 +6,7 @@ on:
     tags:
       - v4.** # Triggers on any tag like v4.0.0, v4.1.2-rc.1, etc.
     branches:
-      - dev/v4/*
+      - dev/v4/main
 
   pull_request:
     types: # The pull request events to listen for
