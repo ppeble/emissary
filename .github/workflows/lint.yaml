@@ -33,6 +33,3 @@ jobs:
         shell: bash
         run: |
           make lint
-      - name: Collect Job Logs
-        uses: ./.github/actions/collect-logs
-        if: always()
