@@ -193,3 +193,8 @@ jobs:
           name: ${{ inputs.artifact-bundle-prefix }}-${{ matrix.arch }}
           retention-days: 7
           if-no-files-found: error
+          path: ${{ github.workspace }}/artifacts/images/*.tar
+
+      - name: Start `upterm` Session
+        if: ${{ env.ACT && inputs.debug && failure() }}
+        uses: ./.github/actions/local-debug
