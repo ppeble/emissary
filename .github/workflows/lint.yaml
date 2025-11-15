@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       ref:
-        description: 'Git ref to checkout'
+        description: Git ref to checkout
         required: false
         type: string
         default: ${{ github.ref }}
@@ -19,7 +19,7 @@ jobs:
     name: Lint
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -33,6 +33,3 @@ jobs:
         shell: bash
         run: |
           make lint
-      - name: Collect Job Logs
-        uses: ./.github/actions/collect-logs
-        if: always()

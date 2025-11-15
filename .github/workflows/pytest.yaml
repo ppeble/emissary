@@ -5,7 +5,7 @@ on:
   workflow_call:
     inputs:
       ref:
-        description: 'Git ref to checkout'
+        description: Git ref to checkout
         required: false
         type: string
         default: ${{ github.ref }}
@@ -19,7 +19,7 @@ jobs:
     name: Run Python Tests
     steps:
       - name: Checkout Repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0

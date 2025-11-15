@@ -1,17 +1,18 @@
+---
 name: Test Docker Images
 
 on:
   workflow_call:
     inputs:
       ref:
-        description: 'Git ref to checkout'
+        type: string
         required: false
-        type: string
         default: ${{ github.ref }}
-      artifact-name-prefix:
-        description: 'Prefix for artifact names from build workflow'
-        required: true
+        description: Git ref to checkout
+      artifact-bundle-prefix:
         type: string
+        required: true
+        description: Prefix for artifact bundle from build workflow
 
 permissions:
   contents: read
@@ -23,7 +24,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        arch:
+          - amd64
+          - arm64
         include:
           - arch: amd64
             runner: ubuntu-24.04
@@ -32,7 +35,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -56,16 +59,26 @@ jobs:
           # Verify cluster is ready
           kubectl cluster-info --context k3d-test-cluster-${{ matrix.arch }}
 
-      - name: Download Docker Image Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ inputs.artifact-name-prefix }}-${{ matrix.arch }}
-          path: ./artifacts
+      - name: Prepare Artifacts Directory
+        shell: bash
+        run: |-
+          mkdir -p ${{ github.workspace }}/artifacts/images
 
-      - name: Load Images into k3d cluster
+      - name: Download Docker Image Artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: ${{ inputs.artifact-bundle-prefix }}-${{ matrix.arch }}
+          path: ${{ github.workspace }}/artifacts/images
+
+      - id: load-k3d-images
+        name: Load Images into k3d cluster
         run: |
-          # Import the tarball directly into k3d cluster
-          k3d image import ./artifacts/images-${{ matrix.arch }}.tar -c test-cluster-${{ matrix.arch }}
+          echo 'Loading images from:'
+          ls ${{ github.workspace }}/artifacts/images/
+
+          # Import the image tarballs directly into k3d cluster
+          k3d image import ${{ github.workspace }}/artifacts/images/*-${{ matrix.arch }}-image.tar -c test-cluster-${{ matrix.arch }}
+
           echo "Images imported into k3d cluster"
 
       - name: Test Images
