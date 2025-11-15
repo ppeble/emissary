@@ -113,7 +113,7 @@ jobs:
 
   release:
     name: Release
-    if: ${{ (startsWith(github.ref, 'refs/tags/v4.') && !contains(github.ref_name, '-')) || (vars.act =='true' && vars.do_release == 'true') }}
+    if: ${{ startsWith(github.ref, 'refs/tags/v4.') || (vars.act =='true' && vars.do_release == 'true') }}
     secrets: inherit
     uses: ./.github/workflows/release.yaml
     needs:
