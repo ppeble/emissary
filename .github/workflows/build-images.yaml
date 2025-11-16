@@ -133,7 +133,12 @@ jobs:
         if: ${{ steps.goreleaser-check.outcome == 'success' }}
         continue-on-error: ${{ inputs.debug }}
         run: |
-          goreleaser release --clean --snapshot
+          # Use --snapshot for non-tag builds to avoid "SNAPSHOT" in version tags
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            goreleaser release --clean --skip=publish
+          else
+            goreleaser release --clean --snapshot
+          fi
 
       - id: save-image-tarballs
         name: Export Docker Image Tarballs
