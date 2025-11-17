@@ -2,8 +2,11 @@ IMAGE_REPO ?= ghcr.io/emissary-ingress/emissary
 CHART_DIR ?= $(OSS_HOME)/charts
 BUILD_CHART ?= $(OSS_HOME)/tools/src/build-chart
 
-CRDS_CHART = $(CHART_DIR)/emissary-crds-chart-$(VERSION).tgz
-EMISSARY_CHART = $(CHART_DIR)/emissary-ingress-$(VERSION).tgz
+# Strip leading 'v' from VERSION for Helm charts
+CHART_VERSION = $(patsubst v%,%,$(VERSION))
+
+CRDS_CHART = $(CHART_DIR)/emissary-crds-chart-$(CHART_VERSION).tgz
+EMISSARY_CHART = $(CHART_DIR)/emissary-ingress-$(CHART_VERSION).tgz
 
 charts: emissary-crds-chart emissary-ingress
 
@@ -13,14 +16,14 @@ emissary-ingress: $(EMISSARY_CHART)
 
 version-check:
 	@if [ -z "$(VERSION)" ]; then \
-		echo "VERSION must be set (e.g. VERSION=1.0.0-alpha.3)" >&2 ;\
+		echo "VERSION must be set (e.g. VERSION=v1.0.0-alpha.3)" >&2 ;\
 		exit 1; \
 	fi
 .PHONY: version-check
 
 helm-registry-check:
 	@if [ -z "$(HELM_REGISTRY)" ]; then \
-		echo "HELM_REGISTRY must be set (e.g. HELM_REGISTRY=oci://docker.io/dwflynn)" >&2 ;\
+		echo "HELM_REGISTRY must be set (e.g. HELM_REGISTRY=oci://ghcr.io/emissary-ingress)" >&2 ;\
 		exit 1; \
 	fi
 .PHONY: helm-registry-check
@@ -51,11 +54,11 @@ helmify-crds: $(OSS_HOME)/.venv $(OSS_HOME)/_generate.tmp/crds
 		$(patsubst %,$(OSS_HOME)/_generate.tmp/crds/getambassador.io_%,$(CRD_FILES))
 
 $(CRDS_CHART): version-check $(CHART_DIR)/emissary-crds helmify-crds
-	( cd $(CHART_DIR) && bash $(BUILD_CHART) emissary-crds $(VERSION) $(IMAGE_REPO) $(CHART_DIR) )
+	( cd $(CHART_DIR) && bash $(BUILD_CHART) emissary-crds $(CHART_VERSION) $(IMAGE_REPO) $(CHART_DIR) )
 	ls -l $(CRDS_CHART)
 
 $(EMISSARY_CHART): version-check $(CHART_DIR)/emissary-ingress
-	( cd $(CHART_DIR) && bash $(BUILD_CHART) emissary-ingress $(VERSION) $(IMAGE_REPO) $(CHART_DIR) )
+	( cd $(CHART_DIR) && bash $(BUILD_CHART) emissary-ingress $(CHART_VERSION) $(IMAGE_REPO) $(CHART_DIR) )
 	ls -l $(EMISSARY_CHART)
 
 push-chart: version-check helm-registry-check
