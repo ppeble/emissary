@@ -86,6 +86,14 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ github.token }}
 
+      - id: configure-helm-auth
+        name: Configure Helm GHCR Auth
+        if: ${{ steps.configure-ghcr-auth.outcome == 'success' }}
+        continue-on-error: ${{ inputs.debug }}
+        shell: bash
+        run: |
+          echo "${{ github.token }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
+
       - id: download-artifacts
         name: Download CI Artifacts
         if: ${{ steps.configure-ghcr-auth.outcome == 'success' }}
@@ -187,8 +195,7 @@ jobs:
               HELM_REGISTRY="oci://${{ inputs.chart-registry }}"
               echo "pushing chart ${CHART} to ${HELM_REGISTRY}"
 
-              PUSH_RESULT="$(helm push "${CHART}" ${HELM_REGISTRY} \
-              --username ${{ github.actor }} --password ${{ github.token }} 2>&1)" \
+              PUSH_RESULT="$(helm push "${CHART}" ${HELM_REGISTRY} 2>&1)" \
               || { EXIT_CODE=$?; echo "failed to push helm chart tarball ${CHART}:\n- ${PUSH_RESULT}" 1>&2; exit ${EXIT_CODE}; }
 
               PUSHED_CHART="$(echo "${PUSH_RESULT}" | head -n1 | cut -d' ' -f2)"
