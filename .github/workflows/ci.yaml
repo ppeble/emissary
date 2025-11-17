@@ -62,7 +62,8 @@ on:
           Defaults to: ghcr.io/emissary-ingress
 
 permissions:
-  contents: read
+  contents: read  # Required by all reusable workflows
+  # packages: write is only granted to release.yaml via its own permissions block
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -114,6 +115,9 @@ jobs:
   release:
     name: Release
     if: ${{ startsWith(github.ref, 'refs/tags/v4.') || (vars.act =='true' && vars.do_release == 'true') }}
+    permissions:
+      contents: read
+      packages: write  # Override to allow pushing to GHCR
     secrets: inherit
     uses: ./.github/workflows/release.yaml
     needs:
