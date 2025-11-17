@@ -184,16 +184,17 @@ jobs:
           fi
 
           for CHART in ${CHART_TARBALLS[@]}; do
-              echo "pushing chart: ${CHART}"
+              HELM_REGISTRY="oci://${{ inputs.chart-registry }}"
+              echo "pushing chart ${CHART} to ${HELM_REGISTRY}"
 
-              PUSH_RESULT="$(helm push "${CHART}" oci://${{ inputs.chart-registry }} \
+              PUSH_RESULT="$(helm push "${CHART}" ${HELM_REGISTRY} \
               --username ${{ github.actor }} --password ${{ github.token }} 2>&1)" \
-              || { EXIT_CODE=$?; echo "failed to push helm chart tarball: ${CHART}" 1>&2; exit ${EXIT_CODE}; }
+              || { EXIT_CODE=$?; echo "failed to push helm chart tarball ${CHART}:\n- ${PUSH_RESULT}" 1>&2; exit ${EXIT_CODE}; }
 
-              PUSHED_CHART="$(printf '%s\n' "${PUSH_RESULT}" | head -n1 | cut -d' ' -f2)"
-              PUSHED_DIGEST="$(printf '%s\n' "${PUSH_RESULT}" | tail -n1 | cut -d' ' -f2)"
+              PUSHED_CHART="$(echo "${PUSH_RESULT}" | head -n1 | cut -d' ' -f2)"
+              PUSHED_DIGEST="$(echo "${PUSH_RESULT}" | tail -n1 | cut -d' ' -f2)"
 
-              printf 'pushed chart: %s (digest: %s)\n' "${PUSHED_CHART}" "${PUSHED_DIGEST}"
+              printf 'pushed chart %s (digest: %s)\n' "${PUSHED_CHART}" "${PUSHED_DIGEST}"
 
               PUSHED_CHARTS+=("${PUSHED_CHART}")
           done
