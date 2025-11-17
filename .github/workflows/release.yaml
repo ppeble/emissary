@@ -20,6 +20,11 @@ on:
         required: true
         description: >-
           The list of components to build images for, formatted as a space-separated list of strings.
+      version:
+        type: string
+        required: true
+        description: >-
+          The version string used when building images. Should come from build-images workflow output.
       release-tag:
         type: string
         required: false
@@ -107,11 +112,12 @@ jobs:
 
           # NOTE: intended meaning of exit codes match their HTTP status equivilent (e.g., exit code 404 == '(file) not found')
 
+          VERSION="${{ inputs.version }}"
           PUSHED_CHARTS=()
           PUSHED_IMAGES=()
           ARCHES=($(echo ${ARCHES} | tr '[[:upper:]]' '[[:lower:]]'))
 
-          echo -e "pushing images for:\n\tarches: ${ARCHES[@]}\n\tcomponents: ${{ inputs.components }}"
+          echo -e "pushing images for:\n\tversion: ${VERSION}\n\tarches: ${ARCHES[@]}\n\tcomponents: ${{ inputs.components }}"
 
           for COMPONENT in ${{ inputs.components }}; do
               COMPONENT_IMAGES=()
@@ -127,15 +133,11 @@ jobs:
                   LOADED_IMAGE="$(docker load --input "${IMAGE_PATH}" | cut -d' ' -f3)" \
                   || { EXIT_CODE=$?; echo "failed to load image from tarball: ${IMAGE_PATH}" 1>&2; exit ${EXIT_CODE}; }
 
-                  LOADED_TAG="$(echo "${LOADED_IMAGE}" | cut -d':' -f2)"
-
-                  if ! echo "${LOADED_TAG}" | grep -E -- "-${ARCH}$" > /dev/null 2>&1; then
-                      LOADED_TAG+="-${ARCH}"
-                  fi
-
-                  COMPONENT_ARCH_TAG="${{ inputs.image-registry }}/${COMPONENT}:${LOADED_TAG}"
+                  # Tag with the version from build-images workflow
+                  COMPONENT_ARCH_TAG="${{ inputs.image-registry }}/${COMPONENT}:${VERSION}-${ARCH}"
 
                   echo "loaded image: ${LOADED_IMAGE}"
+                  echo "tagging as: ${COMPONENT_ARCH_TAG}"
 
                   docker tag "${LOADED_IMAGE}" "${COMPONENT_ARCH_TAG}" \
                   || { EXIT_CODE=$?; echo "failed to tag loaded image: [loaded: ${LOADED_IMAGE}, tag: ${COMPONENT_ARCH_TAG}]" 1>&2; exit ${EXIT_CODE}; }
@@ -147,7 +149,8 @@ jobs:
                   COMPONENT_IMAGES+=("--amend" "${COMPONENT_ARCH_TAG}")
               done
 
-              MANIFEST_TAG="$(echo "${COMPONENT_IMAGES[1]}" | sed -E 's#-(arm|amd)64$##Ig')"
+              # Create multi-arch manifest using the version
+              MANIFEST_TAG="${{ inputs.image-registry }}/${COMPONENT}:${VERSION}"
 
               echo "creating multi-arch manifest for: ${MANIFEST_TAG}"
 

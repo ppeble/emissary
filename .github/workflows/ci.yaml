@@ -131,5 +131,6 @@ jobs:
       ref: ${{ inputs.ref || github.ref }}
       debug: ${{ inputs.debug || false }}
       components: ${{ needs.build-images.outputs.components }}
+      version: ${{ needs.build-images.outputs.version }}
       chart-registry: ${{ inputs.chart-registry || 'ghcr.io/emissary-ingress' }}
       image-registry: ${{ inputs.chart-registry || 'ghcr.io/emissary-ingress' }}

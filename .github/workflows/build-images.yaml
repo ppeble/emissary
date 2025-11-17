@@ -56,6 +56,14 @@ on:
       artifact-digest:
         value: ${{ jobs.build-images.outputs.artifact-digest }}
         description: SHA-256 digest of the built images artifact
+      version:
+        # NOTE: This comes from a matrix job, so multiple runners set
+        # this value. The last job to complete wins, but all jobs read
+        # from the same source file (python/ambassador.version), so the
+        # value should be consistent.
+        value: ${{ jobs.build-images.outputs.version }}
+        description: >-
+          The version string used when building the images.
 
 permissions:
   contents: read
@@ -78,6 +86,11 @@ jobs:
 
     outputs:
       components: ${{ inputs.components }}
+      # NOTE: This comes from a matrix job, so multiple runners set
+      # this value. The last job to complete wins, but all jobs read
+      # from the same source file (python/ambassador.version), so the
+      # value should be consistent.
+      version: ${{ steps.goreleaser-build.outputs.version }}
       artifact-id: ${{ steps.upload-image-tarballs.outputs.artifact-id }}
       artifact-url: ${{ steps.upload-image-tarballs.outputs.artifact-url }}
       artifact-digest: ${{ steps.upload-image-tarballs.outputs.artifact-digest }}
@@ -133,6 +146,8 @@ jobs:
         if: ${{ steps.goreleaser-check.outcome == 'success' }}
         continue-on-error: ${{ inputs.debug }}
         run: |
+          set -euo pipefail
+
           # Use --snapshot for non-tag builds to avoid "SNAPSHOT" in version tags
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             goreleaser release --clean --skip=publish
@@ -140,31 +155,15 @@ jobs:
             goreleaser release --clean --snapshot
           fi
 
+          # Grab the version from python/ambassador.version -- we'll need to change
+          # this when we get rid of the Python code, but for now it's handy.
+          echo "version=$(head -1 python/ambassador.version)" >> $GITHUB_OUTPUT
+
       - id: save-image-tarballs
         name: Export Docker Image Tarballs
         if: ${{ steps.goreleaser-build.outcome == 'success' }}
         continue-on-error: ${{ inputs.debug }}
         shell: bash
-        env:
-          JQ_FILTER: |-
-            map(
-                select(
-                    # filter tags that look like version numbers suffixed with the short-sha
-                    # of the current commit and the current architecture (e.x. amd64 or arm64)
-                    (.Tag | test("^v?[0-9][.].+-\(env.SHORT_SHA)[^-]*-${{ matrix.arch }}"; "i"))
-
-                    # filter for images from the 'ghcr.io/emissary-ingress' repository that
-                    # also match one of the components goreleaser was configured to build for
-                    and (.Repository | test("^ghcr.io/emissary-ingress/(\(env.COMPONENTS))"; "i"))
-                )
-
-                # format the standard 'repository:tag' specifier
-                # for each image that matched the filter critera
-                | "\(.Repository):\(.Tag)"
-
-            # print the filtered image tags as a tab-separated list (because the @sh function
-            # will wrap each value in single quotes, which is even less helpful for script use)
-            ) | @tsv
         run: |
           set -euo pipefail
 
@@ -172,21 +171,29 @@ jobs:
 
           mkdir -p ${{ github.workspace }}/artifacts/images
 
-          docker images
+          VERSION=$(head -1 python/ambassador.version)
+          IMAGES=$(docker images --format '{{.Repository}}:{{.Tag}}' \
+                    | grep ghcr.io/emissary-ingress \
+                    | fgrep "$(echo ${{ inputs.components }} | tr ' ' '\n' | sed -e 's/$/:/')" \
+                    | egrep ":${VERSION}-${{ matrix.arch }}\$")
 
-          export SHORT_SHA="${GITHUB_SHA:0:8}"
-          export COMPONENTS="$(echo '${{ inputs.components }}' | tr '[:space:]' '|')"
+          echo "Saving images for"
+          echo " - version: ${VERSION}"
+          echo " - architecture: ${{ matrix.arch }}"
+          echo " - components:"
+          echo "${{ inputs.components }}" | sed -e 's/^/    - /'
+          echo ""
+          echo " - images:"
+          echo "${IMAGES}" | sed -e 's/^/    - /'
 
-          COMPONENT_IMAGES=($(docker images --no-trunc --format json | jq -sr "${JQ_FILTER}" | tr '\t' ' '))
-
-          for IMAGE in ${COMPONENT_IMAGES[@]}; do
+          for IMAGE in ${IMAGES[@]}; do
               COMPONENT="$(echo "${IMAGE}" | tr ':' '/' | cut -d'/' -f3)"
               IMAGE_PATH="${{ github.workspace }}/artifacts/images/${COMPONENT}-${{ matrix.arch }}-image.tar"
 
               docker save "${IMAGE}" -o "${IMAGE_PATH}" \
-              || { EXIT_CODE=$?; echo "failed to save image tarball for: ${COMPONENT}" 1>&2; exit ${EXIT_CODE}; }
+                  || { EXIT_CODE=$?; echo "failed to save image tarball for: ${COMPONENT}" 1>&2; exit ${EXIT_CODE}; }
 
-              printf 'saved image tarball:\n\tcomponent: %s\n\tpath: %s\n\timage: %s\n' "${COMPONENT}" "${IMAGE_PATH}" "${IMAGE}"
+              echo "saved ${IMAGE} as ${IMAGE_PATH}"
           done
 
       - id: upload-image-tarballs
