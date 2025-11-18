@@ -59,7 +59,7 @@ on:
           TODO
 
 permissions:
-  contents: read
+  contents: write  # Required for creating GitHub releases
   packages: write  # Required for pushing to GHCR
 
 jobs:
@@ -212,19 +212,22 @@ jobs:
         if: ${{ env.ACT && inputs.debug && failure() }}
         uses: ./.github/actions/local-debug
 
-#      - id: release-artifacts
-#        name: Release
-#        if: ${{ !env.ACT }}
-#        uses: softprops/action-gh-release@v2
-#        with:
-#          make_latest: true
-#          fail_on_unmatched_files: true
-#          tag_name: ${{ inputs.release-tag }}
-#          files: |
-#            ${{ github.workspace }}/artifacts/*
-
       - id: release-artifacts
         name: Release
-        shell: bash
-        run: |
-          echo "declining to cut an actual GitHub release for the moment"
+        if: ${{ !env.ACT }}
+        uses: softprops/action-gh-release@v2
+        with:
+          make_latest: false
+          draft: true
+          fail_on_unmatched_files: true
+          name: Emissary-ingress ${{ inputs.release-tag }}
+          tag_name: ${{ inputs.release-tag }}
+          body: |
+            ## :tada: Emissary ${{ inputs.release-tag }} :tada:
+
+            #### Emissary-ingress is an open source, Kubernetes-native microservices API gateway built on the Envoy Proxy.
+
+            Get started with Emissary-ingress - https://emissary-ingress.dev/docs/${{ inputs.release-tag }}/quick-start/
+            View changelog - https://github.com/emissary-ingress/emissary/blob/${{ inputs.release-tag }}/CHANGELOG.md
+          files: |
+            ${{ github.workspace }}/artifacts/*

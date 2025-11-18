@@ -116,7 +116,7 @@ jobs:
     name: Release
     if: ${{ startsWith(github.ref, 'refs/tags/v4.') || (vars.act =='true' && vars.do_release == 'true') }}
     permissions:
-      contents: read
+      contents: write  # Override to allow creating GitHub releases
       packages: write  # Override to allow pushing to GHCR
     secrets: inherit
     uses: ./.github/workflows/release.yaml
