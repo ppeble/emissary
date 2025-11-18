@@ -229,5 +229,5 @@ jobs:
 
             Get started with Emissary-ingress - https://emissary-ingress.dev/docs/${{ inputs.release-tag }}/quick-start/
             View changelog - https://github.com/emissary-ingress/emissary/blob/${{ inputs.release-tag }}/CHANGELOG.md
-          files: |
-            ${{ github.workspace }}/artifacts/*
+          # files: |
+          #   ${{ github.workspace }}/artifacts/*
