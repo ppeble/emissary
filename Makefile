@@ -53,9 +53,11 @@ ifneq ($(MAKECMDGOALS),$(OSS_HOME)/build-aux/go-version.txt)
 #     ,$(error CHART_VERSION variable is invalid: It must be v4.* or v0.0.0-$$tag, but is '$(CHART_VERSION)'))
 #   export CHART_VERSION
 
-  $(info [make] VERSION=$(VERSION))
-  $(info [make] CHART_VERSION=$(CHART_VERSION))
-  $(info [make] ARCH=$(ARCH))
+  ifeq ($(shell test "$(VERBOSE)" -gt 0 2>/dev/null && echo true),true)
+    $(info [make] VERSION=$(VERSION))
+    $(info [make] CHART_VERSION=$(CHART_VERSION))
+    $(info [make] ARCH=$(ARCH))
+  endif
 endif
 
 # If SOURCE_DATE_EPOCH isn't set, AND the tree isn't dirty, then set
@@ -66,8 +68,10 @@ ifeq ($(SOURCE_DATE_EPOCH)$(shell git status --porcelain),)
   SOURCE_DATE_EPOCH := $(shell git log -1 --pretty=%ct)
 endif
 ifneq ($(SOURCE_DATE_EPOCH),)
-  export SOURCE_DATE_EPOCH
-  $(info [make] SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH))
+  ifeq ($(shell test "$(VERBOSE)" -gt 0 2>/dev/null && echo true),true)
+    export SOURCE_DATE_EPOCH
+    $(info [make] SOURCE_DATE_EPOCH=$(SOURCE_DATE_EPOCH))
+  endif
 endif
 
 # Everything else...
