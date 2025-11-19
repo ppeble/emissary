@@ -1,3 +1,6 @@
+# Shut up make
+MAKEFLAGS += --no-print-directory
+
 # Real early setup
 OSS_HOME := $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))# Do this *before* 'include'-ing anything else
 include build-aux/init-sanitize-env.mk
