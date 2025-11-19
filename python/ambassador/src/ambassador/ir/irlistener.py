@@ -32,6 +32,7 @@ class IRListener(IRResource):
         "bind_address",
         "l7Depth",
         "hostBinding",  # Note that hostBinding gets processed and deleted in setup.
+        "http2MaxConcurrentStreams",
         "port",
         "protocol",
         "protocolStack",
