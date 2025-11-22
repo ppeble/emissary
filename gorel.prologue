@@ -23,7 +23,7 @@ version: 2
 
 # Allow overriding the registry and image name with environment variables.
 env:
-  - ENVOY_IMAGE=envoyproxy/envoy:distroless-v1.30.3
+  - ENVOY_IMAGE={{ if index .Env "ENVOY_IMAGE"  }}{{ .Env.ENVOY_IMAGE }}{{ else }}%%DEFAULT_ENVOY_IMAGE%%{{ end }}
   - REGISTRY={{ if index .Env "REGISTRY"  }}{{ .Env.REGISTRY }}{{ else }}ghcr.io/emissary-ingress{{ end }}
   - EMISSARY_IMAGE={{ if index .Env "EMISSARY_IMAGE"  }}{{ .Env.EMISSARY_IMAGE }}{{ else }}emissary{{ end }}
   - APIEXT_IMAGE={{ if index .Env "APIEXT_IMAGE"  }}{{ .Env.APIEXT_IMAGE }}{{ else }}apiext{{ end }}

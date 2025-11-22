@@ -9,6 +9,9 @@ include build-aux/tools.mk
 # to "emissary-test".
 TEST_CLUSTER ?= emissary-test
 
+# Default Envoy image to use when building Emissary.
+ENVOY_IMAGE ?= envoyproxy/envoy:distroless-v1.30.3
+
 # Bootstrapping the build env
 #
 ifneq ($(MAKECMDGOALS),$(OSS_HOME)/build-aux/go-version.txt)
