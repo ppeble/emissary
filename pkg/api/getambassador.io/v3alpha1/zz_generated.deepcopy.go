@@ -1460,6 +1460,11 @@ func (in *ListenerSpec) DeepCopyInto(out *ListenerSpec) {
 		*out = make([]ProtocolStackElement, len(*in))
 		copy(*out, *in)
 	}
+	if in.HTTP2MaxConcurrentStreams != nil {
+		in, out := &in.HTTP2MaxConcurrentStreams, &out.HTTP2MaxConcurrentStreams
+		*out = new(uint32)
+		**out = **in
+	}
 	in.HostBinding.DeepCopyInto(&out.HostBinding)
 }
 

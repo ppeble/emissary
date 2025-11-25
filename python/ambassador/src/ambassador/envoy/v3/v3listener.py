@@ -497,6 +497,13 @@ class V3Listener:
             if self.isProtocolUDP():
                 base_http_config["codec_type"] = "HTTP3"
 
+        # Configure HTTP/2 protocol options if specified on the Listener
+        http2_max_concurrent_streams = self._irlistener.get("http2MaxConcurrentStreams", None)
+        if http2_max_concurrent_streams is not None:
+            base_http_config["http2_protocol_options"] = {
+                "max_concurrent_streams": http2_max_concurrent_streams
+            }
+
         # Assemble base HTTP filters
         from .v3httpfilter import V3HTTPFilter
 

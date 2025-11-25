@@ -133,6 +133,14 @@ spec:
                     type: object
                     x-kubernetes-map-type: atomic
                 type: object
+              http2MaxConcurrentStreams:
+                description: HTTP2MaxConcurrentStreams specifies the maximum number
+                  of concurrent HTTP/2 streams allowed on a single connection. If not
+                  specified, defaults to Envoy's default (which changed from 2147483647
+                  to 1024 in Envoy 1.36).
+                format: int32
+                minimum: 1
+                type: integer
               l7Depth:
                 description: L7Depth specifies how many layer 7 load balancers are between
                   us and the edge of the network.

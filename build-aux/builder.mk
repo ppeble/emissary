@@ -112,9 +112,11 @@ REGISTRY_ERR += $(NL)ERROR: please set the DEV_REGISTRY make/env variable to the
 REGISTRY_ERR += $(NL)       you would like to use for development
 REGISTRY_ERR += $(END)
 
-images:
+.goreleaser.yaml: FORCE
 	$(eval ARCH_ARG := $(if $(BUILD_ARCH),--arch $(BUILD_ARCH)))
-	python make-gorel.py --header gorel.prologue $(ARCH_ARG) > .goreleaser.yaml
+	python make-gorel.py --header gorel.prologue --envoy $(ENVOY_IMAGE) $(ARCH_ARG) > $@
+
+images: .goreleaser.yaml
 	goreleaser release --snapshot --clean
 .PHONY: images
 

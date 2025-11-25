@@ -6,7 +6,6 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
@@ -15,8 +14,6 @@ import (
 	"github.com/datawire/dlib/dexec"
 	"github.com/datawire/dlib/dgroup"
 	"github.com/datawire/dlib/dhttp"
-
-	"gopkg.in/yaml.v2"
 )
 
 func GetLoopbackAddr(ctx context.Context, port int) (string, error) {
@@ -49,34 +46,24 @@ func getLocalEnvoyImage(ctx context.Context) (string, error) {
 		return env, nil
 	}
 
-	// Use the Envoy image listed in gorel.prologue.
-	ossHome, err := getOSSHome(ctx)
+	// Use the Envoy image from the Makefile.
+	makeCmd := "make"
+	if env := os.Getenv("MAKE"); env != "" {
+		makeCmd = env
+	}
+
+	home, err := getOSSHome(ctx)
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "error getting OSS home directory")
 	}
-
-	goreleaserConfigPath := filepath.Join(ossHome, "gorel.prologue")
-	data, err := os.ReadFile(goreleaserConfigPath)
+	cmd := dexec.CommandContext(ctx, makeCmd, "print-envoy-image")
+	cmd.Dir = home
+	output, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return "", errors.Wrapf(err, "error running %s print-envoy-image", makeCmd)
 	}
 
-	var config struct {
-		Env []string `yaml:"env"`
-	}
-
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		return "", err
-	}
-
-	for _, env := range config.Env {
-		if strings.HasPrefix(env, "ENVOY_IMAGE=") {
-			return strings.TrimPrefix(env, "ENVOY_IMAGE="), nil
-		}
-	}
-
-	return "", errors.New("no ENVOY_IMAGE found in .goreleaser.yaml")
+	return strings.TrimSpace(string(output)), nil
 }
 
 var (

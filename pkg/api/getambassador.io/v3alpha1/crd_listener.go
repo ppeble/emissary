@@ -164,6 +164,12 @@ type ListenerSpec struct {
 	// the network.
 	L7Depth int32 `json:"l7Depth,omitempty"`
 
+	// HTTP2MaxConcurrentStreams specifies the maximum number of concurrent HTTP/2 streams
+	// allowed on a single connection. If not specified, defaults to Envoy's default (which
+	// changed from 2147483647 to 1024 in Envoy 1.36).
+	// +kubebuilder:validation:Minimum=1
+	HTTP2MaxConcurrentStreams *uint32 `json:"http2MaxConcurrentStreams,omitempty"`
+
 	// HostBinding allows restricting which Hosts will be used for this Listener.
 	// +kubebuilder:validation:Required
 	HostBinding HostBindingType `json:"hostBinding"`

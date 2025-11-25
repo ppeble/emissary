@@ -126,11 +126,7 @@ jobs:
         name: Generate GoReleaser Config
         if: ${{ steps.install-goreleaser.outcome == 'success' }}
         continue-on-error: ${{ inputs.debug }}
-        run: >-
-          uv run -- python make-gorel.py
-          --header gorel.prologue
-          --arch ${{ matrix.arch }}
-          > .goreleaser.yaml
+        run: make .goreleaser.yaml
 
       - id: goreleaser-check
         name: GoReleaser Check(s)

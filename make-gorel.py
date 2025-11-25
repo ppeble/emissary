@@ -85,6 +85,7 @@ def DockerOnlyBuild(name):
 def main():
     parser = argparse.ArgumentParser(description="Generate gorel YAML definitions.")
     parser.add_argument("--arch", type=str, default="arm64,amd64", help="Comma-separated architectures to use (default: %(default)s)")
+    parser.add_argument("--envoy", type=str, default="no/one/set/ENVOY_IMAGE", help="Default Envoy image to use (default: unset)")
     parser.add_argument("--header", type=str, help="File to print before YAML output")
     parser.add_argument("--footer", type=str, help="File to print after YAML output")
     args = parser.parse_args()
@@ -224,15 +225,22 @@ def main():
         "docker_manifests": manifest_defs,
     }
 
+    text = ""
+
     if args.header:
         with open(args.header, "r") as f:
-            print(f.read(), end="")
+            text += f.read()
 
-    print(yaml.safe_dump(gorel))
+    text += yaml.safe_dump(gorel)
 
     if args.footer:
         with open(args.footer, "r") as f:
-            print(f.read(), end="")
+            text += f.read()
+
+    if args.envoy:
+        text = text.replace("%%DEFAULT_ENVOY_IMAGE%%", args.envoy)
+
+    print(text)
 
 if __name__ == "__main__":
     main()
