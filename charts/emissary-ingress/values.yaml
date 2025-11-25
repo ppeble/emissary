@@ -202,6 +202,9 @@ service:
 
   externalIPs: []
 
+  # Sets the IP family for the emissary services, see https://kubernetes.io/docs/concepts/services-networking/dual-stack/#services for futher details
+  ipFamilies: []
+
   annotations: {}
 
   # Manually set the name of the generated Service
