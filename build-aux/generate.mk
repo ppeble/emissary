@@ -29,7 +29,7 @@ generate/files      += $(patsubst $(OSS_HOME)/api/%.proto,                   $(O
 # Individual files: Misc
 generate/files      += $(OSS_HOME)/DEPENDENCIES.md
 generate/files      += $(OSS_HOME)/DEPENDENCY_LICENSES.md
-generate-fast/files += $(OSS_HOME)/CHANGELOG.md
+# generate-fast/files += $(OSS_HOME)/CHANGELOG.md
 generate-fast/files += $(OSS_HOME)/pkg/api/getambassador.io/v1/zz_generated.conversion.go
 generate-fast/files += $(OSS_HOME)/pkg/api/getambassador.io/v1/zz_generated.conversion-spoke.go
 generate-fast/files += $(OSS_HOME)/pkg/api/getambassador.io/v1/zz_generated.deepcopy.go
