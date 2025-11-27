@@ -15,8 +15,8 @@ _These release notes describe Emissary v4.0.0-rc.0._
 
 ### Quickstart
 
-To install Emissary v4 using Helm, follow the instructions in the
-[Emissary
+Emissary v4 supports both AMD64 and ARM64 architectures. To install
+Emissary v4 using Helm, follow the instructions in the [Emissary
 Quickstart](https://emissary-ingress.dev/docs/4.0/quick-start/).
 
 Emissary provides two Helm charts:
@@ -78,6 +78,9 @@ from the Helm charts.
 
 - Fix: The Helm chart now correctly restores the `HOST_IP` value for
   tracing providers (thanks, [Tenshin Higashi]!)
+
+- Feature: Emissary now supports both `arm64` and `amd64` architectures
+  using multiarch Docker images.
 
 - Feature: When the `emissary-apiext` deployment is in use, the Helm
   chart correctly sets its `securityContext` (thanks, [Frederic Mereu]!).
