@@ -171,7 +171,9 @@ def main():
 
         output.write(s)
         output.write(f"spec:\n")
-        output.write('  {{- include "partials.conversion" . }}\n')
+
+        if "v1" in versions or "v2" in versions:
+            output.write('  {{- include "partials.conversion" . }}\n')
 
         n = crd["spec"]["names"]
         categories = n.get('categories')
@@ -214,9 +216,12 @@ def main():
         if "v3alpha1" in versions:
             v = versions["v3alpha1"]
             v["storage"] = "XXXSTORAGEXXX"
-
             s = indent(yaml.safe_dump([ v ]), 2)
-            s = s.replace("XXXSTORAGEXXX", '{{ include "partials.v3alpha1storage" . }}')
+
+            if ("v1" in versions or "v2" in versions):
+                s = s.replace("XXXSTORAGEXXX", '{{ include "partials.v3alpha1storage" . }}')
+            else:
+                s = s.replace("XXXSTORAGEXXX", 'true')
 
             output.write(s)
             output.write("\n")
