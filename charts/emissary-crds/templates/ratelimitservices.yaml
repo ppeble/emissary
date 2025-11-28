@@ -4,6 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
   labels:
+    app.kubernetes.io/part-of: emissary-ingress
     emissary-ingress.dev/control-plane-ns: {{ .Release.Namespace }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
   name: ratelimitservices.getambassador.io
@@ -42,11 +43,6 @@ spec:
           spec:
             description: RateLimitServiceSpec defines the desired state of RateLimitService
             properties:
-              ambassador_id:
-                description: Common to all Ambassador objects.
-                items:
-                  type: string
-                type: d6e-union:string,array
               domain:
                 type: string
               failure_mode_deny:
@@ -62,8 +58,6 @@ spec:
                 type: string
               timeout_ms:
                 type: integer
-              tls:
-                type: d6e-union:string,boolean
               v3GRPC:
                 properties:
                   use_resource_exhausted_code:
@@ -77,6 +71,7 @@ spec:
             required:
             - service
             type: object
+            x-kubernetes-preserve-unknown-fields: true
         type: object
     served: true
     storage: false
@@ -101,11 +96,6 @@ spec:
           spec:
             description: RateLimitServiceSpec defines the desired state of RateLimitService
             properties:
-              ambassador_id:
-                description: Common to all Ambassador objects.
-                items:
-                  type: string
-                type: d6e-union:string,array
               domain:
                 type: string
               failure_mode_deny:
@@ -121,8 +111,6 @@ spec:
                 type: string
               timeout_ms:
                 type: integer
-              tls:
-                type: d6e-union:string,boolean
               v3GRPC:
                 properties:
                   use_resource_exhausted_code:
@@ -136,6 +124,7 @@ spec:
             required:
             - service
             type: object
+            x-kubernetes-preserve-unknown-fields: true
         type: object
     served: true
     storage: true

@@ -31,6 +31,7 @@ following Free and Open Source software:
     github.com/distribution/reference                                                       v0.5.0                                 Apache License 2.0
     github.com/emicklei/go-restful/v3                                                       v3.11.0                                MIT license
     github.com/emirpasic/gods                                                               v1.18.1                                2-clause BSD license, ISC license
+    github.com/emissary-ingress/goversion                                                   v0.0.0-20230221050731-229c429afb59     3-clause BSD license, Apache License 2.0
     github.com/envoyproxy/go-control-plane                                                  v0.11.1                                Apache License 2.0
     github.com/envoyproxy/protoc-gen-validate                                               v1.0.2                                 Apache License 2.0
     github.com/evanphx/json-patch                                                           v5.7.0+incompatible                    3-clause BSD license

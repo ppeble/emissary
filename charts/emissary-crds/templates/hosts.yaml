@@ -4,6 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
   labels:
+    app.kubernetes.io/part-of: emissary-ingress
     emissary-ingress.dev/control-plane-ns: {{ .Release.Namespace }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
   name: hosts.getambassador.io
@@ -101,20 +102,6 @@ spec:
                     description: This is normally set automatically
                     type: string
                 type: object
-              ambassadorId:
-                description: A compatibility alias for "ambassador_id"; because Host
-                  used to be specified with protobuf, and jsonpb allowed either "ambassador_id"
-                  or "ambassadorId", and even though we didn't tell people about "ambassadorId"
-                  it's what the web policy console generated because of jsonpb.  So
-                  Hosts with 'ambassadorId' exist in the wild.
-                items:
-                  type: string
-                type: d6e-union:string,array
-              ambassador_id:
-                description: Common to all Ambassador objects (and optional).
-                items:
-                  type: string
-                type: d6e-union:string,array
               hostname:
                 description: Hostname by which the Ambassador can be reached.
                 type: string
@@ -269,6 +256,7 @@ spec:
                 type: object
                 x-kubernetes-map-type: atomic
             type: object
+            x-kubernetes-preserve-unknown-fields: true
           status:
             description: HostStatus defines the observed state of Host
             properties:

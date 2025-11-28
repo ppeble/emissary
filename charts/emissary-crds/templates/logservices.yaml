@@ -4,6 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
   labels:
+    app.kubernetes.io/part-of: emissary-ingress
     emissary-ingress.dev/control-plane-ns: {{ .Release.Namespace }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
   name: logservices.getambassador.io
@@ -42,14 +43,6 @@ spec:
           spec:
             description: LogServiceSpec defines the desired state of LogService
             properties:
-              ambassador_id:
-                description: "AmbassadorID declares which Ambassador instances should\
-                  \ pay attention to this resource.  May either be a string or a list\
-                  \ of strings.  If no value is provided, the default is: \n ambassador_id:\
-                  \ - \"default\""
-                items:
-                  type: string
-                type: d6e-union:string,array
               driver:
                 enum:
                 - tcp
@@ -87,6 +80,7 @@ spec:
               v3StatsName:
                 type: string
             type: object
+            x-kubernetes-preserve-unknown-fields: true
         type: object
     served: true
     storage: false
@@ -111,14 +105,6 @@ spec:
           spec:
             description: LogServiceSpec defines the desired state of LogService
             properties:
-              ambassador_id:
-                description: "AmbassadorID declares which Ambassador instances should\
-                  \ pay attention to this resource.  May either be a string or a list\
-                  \ of strings.  If no value is provided, the default is: \n ambassador_id:\
-                  \ - \"default\""
-                items:
-                  type: string
-                type: d6e-union:string,array
               driver:
                 enum:
                 - tcp
@@ -156,6 +142,7 @@ spec:
               v3StatsName:
                 type: string
             type: object
+            x-kubernetes-preserve-unknown-fields: true
         type: object
     served: true
     storage: true

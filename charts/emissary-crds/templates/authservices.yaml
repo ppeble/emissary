@@ -4,6 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
   labels:
+    app.kubernetes.io/part-of: emissary-ingress
     emissary-ingress.dev/control-plane-ns: {{ .Release.Namespace }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
   name: authservices.getambassador.io
@@ -58,14 +59,6 @@ spec:
                 items:
                   type: string
                 type: array
-              ambassador_id:
-                description: "AmbassadorID declares which Ambassador instances should\
-                  \ pay attention to this resource.  May either be a string or a list\
-                  \ of strings.  If no value is provided, the default is: \n ambassador_id:\
-                  \ - \"default\""
-                items:
-                  type: string
-                type: d6e-union:string,array
               auth_service:
                 type: string
               failure_mode_allow:
@@ -101,8 +94,6 @@ spec:
                 type: object
               timeout_ms:
                 type: integer
-              tls:
-                type: d6e-union:string,boolean
               v3CircuitBreakers:
                 items:
                   properties:
@@ -126,6 +117,7 @@ spec:
             required:
             - auth_service
             type: object
+            x-kubernetes-preserve-unknown-fields: true
         type: object
     served: true
     storage: false
@@ -166,14 +158,6 @@ spec:
                 items:
                   type: string
                 type: array
-              ambassador_id:
-                description: "AmbassadorID declares which Ambassador instances should\
-                  \ pay attention to this resource.  May either be a string or a list\
-                  \ of strings.  If no value is provided, the default is: \n ambassador_id:\
-                  \ - \"default\""
-                items:
-                  type: string
-                type: d6e-union:string,array
               auth_service:
                 type: string
               failure_mode_allow:
@@ -209,8 +193,6 @@ spec:
                 type: object
               timeout_ms:
                 type: integer
-              tls:
-                type: d6e-union:string,boolean
               v3CircuitBreakers:
                 items:
                   properties:
@@ -234,6 +216,7 @@ spec:
             required:
             - auth_service
             type: object
+            x-kubernetes-preserve-unknown-fields: true
         type: object
     served: true
     storage: true

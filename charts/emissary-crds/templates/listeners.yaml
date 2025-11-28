@@ -4,11 +4,11 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
   labels:
+    app.kubernetes.io/part-of: emissary-ingress
     emissary-ingress.dev/control-plane-ns: {{ .Release.Namespace }}
     helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
   name: listeners.getambassador.io
 spec:
-  {{- include "partials.conversion" . }}
   group: getambassador.io
   names:
     categories:
@@ -200,5 +200,5 @@ spec:
             type: object
         type: object
     served: true
-    storage: {{ include "partials.v3alpha1storage" . }}
+    storage: true
     subresources: {}
