@@ -52,7 +52,7 @@ func NewCRDPatchController(client client.Client, logger *zap.Logger, certifcateA
 
 // SetupWithManager will register controller with manager
 func (c *crdPatchController) SetupWithManager(mgr manager.Manager) error {
-
+	c.logger.Info("setting up CRD patch controller with manager")
 	if err := registerGetAmbassadorioGroupIndexer(mgr); err != nil {
 		return err
 	}

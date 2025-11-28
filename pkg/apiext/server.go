@@ -112,6 +112,9 @@ func (s *WebhookServer) Run(ctx context.Context, scheme *runtime.Scheme) error {
 	leaderElectionEnabled := s.isLeaderElectionEnabled()
 	s.logger.Info("leader election support", zap.Bool("enabled", leaderElectionEnabled))
 
+	s.logger.Info("CA management", zap.Bool("enabled", s.caMgmtEnabled))
+	s.logger.Info("CRD patch management", zap.Bool("enabled", s.crdPatchMgmtEnabled))
+
 	mgr, err := manager.New(k8sConfig, manager.Options{
 		Scheme:                        scheme,
 		LeaderElection:                leaderElectionEnabled,
@@ -137,7 +140,7 @@ func (s *WebhookServer) Run(ctx context.Context, scheme *runtime.Scheme) error {
 		return err
 	}
 
-	if s.caMgmtEnabled {
+	if s.crdPatchMgmtEnabled {
 		crdCAController := crdcontroller.NewCRDPatchController(mgr.GetClient(), s.logger,
 			s.certificateAuthority,
 			s.serviceSettings,
@@ -148,7 +151,7 @@ func (s *WebhookServer) Run(ctx context.Context, scheme *runtime.Scheme) error {
 		}
 	}
 
-	if s.crdPatchMgmtEnabled {
+	if s.caMgmtEnabled {
 		caCertMgr := cacertrunnable.NewCACertManager(s.logger, mgr.GetClient(),
 			cacertrunnable.WithCASecretNamespace(s.caSecretSettings.Namespace),
 			cacertrunnable.WithCASecretName(s.caSecretSettings.Name),
