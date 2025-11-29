@@ -60,6 +60,7 @@ tools/conversion-gen     = $(tools.bindir)/conversion-gen
 tools/crane              = $(tools.bindir)/crane
 tools/go-mkopensource    = $(tools.bindir)/go-mkopensource
 tools/golangci-lint      = $(tools.bindir)/golangci-lint
+tools/goversion          = $(tools.bindir)/goversion
 tools/kubestatus         = $(tools.bindir)/kubestatus
 tools/ocibuild           = $(tools.bindir)/ocibuild
 tools/protoc-gen-go      = $(tools.bindir)/protoc-gen-go
@@ -73,6 +74,7 @@ tools.main-gomod += $(tools/conversion-gen)     # ensure runtime libraries are c
 tools.main-gomod += $(tools/protoc-gen-go)      # ensure runtime libraries are consistent
 tools.main-gomod += $(tools/protoc-gen-go-grpc) # ensure runtime libraries are consistent
 tools.main-gomod += $(tools/go-mkopensource)    # ensure it is consistent with py-mkopensource
+tools.main-gomod += $(tools/goversion)          # uses main go.mod for git/module dependencies
 tools.main-gomod += $(tools/kubestatus)         # is actually part of Emissary
 $(tools.main-gomod): $(tools.bindir)/%: $(tools.srcdir)/%/pin.go $(OSS_HOME)/go.mod
 	cd $(<D) && GOOS= GOARCH= go build -o $(abspath $@) $$(sed -En 's,^import _ "(.*)".*,\1,p' pin.go)
@@ -84,7 +86,6 @@ tools/dsum            = $(tools.bindir)/dsum
 tools/filter-yaml     = $(tools.bindir)/filter-yaml
 tools/flock           = $(tools.bindir)/flock
 tools/gotest2tap      = $(tools.bindir)/gotest2tap
-tools/goversion       = $(tools.bindir)/goversion
 tools/py-mkopensource = $(tools.bindir)/py-mkopensource
 tools/py-split-tests  = $(tools.bindir)/py-split-tests
 tools/testcert-gen    = $(tools.bindir)/testcert-gen

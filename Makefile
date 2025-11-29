@@ -17,7 +17,11 @@ ENVOY_IMAGE ?= envoyproxy/envoy:distroless-v1.36.2
 
 # Bootstrapping the build env
 #
+# I actually kind of hate this code. What's happening is that mostly we
+# require VERSION to be set, but we have a fallback mechanism to
+# calculate it if it's not set.
 ifneq ($(MAKECMDGOALS),$(OSS_HOME)/build-aux/go-version.txt)
+ifneq ($(filter tools/bin/goversion,$(MAKECMDGOALS)),tools/bin/goversion)
   ifneq ($(filter $(shell go env GOROOT),$(subst :, ,$(shell go env GOPATH))),)
     $(error Your $$GOPATH (where *your* Go stuff goes) and $$GOROOT (where Go *itself* is installed) are both set to the same directory ($(shell go env GOROOT)); it is remarkable that it has not blown up catastrophically before now)
   endif
@@ -25,7 +29,9 @@ ifneq ($(MAKECMDGOALS),$(OSS_HOME)/build-aux/go-version.txt)
     $(error Your emissary.git checkout is inside of your $$GOPATH ($(shell go env GOPATH)); Emissary-ingress uses Go modules and so GOPATH need not be pointed at it (in a post-modules world, the only role of GOPATH is to store the module download cache); and indeed some of the Kubernetes tools will get confused if GOPATH is pointed at it)
   endif
 
-  VERSION := $(or $(VERSION),$(shell go run ./tools/src/goversion))
+  # Ensure goversion is built before we try to use it
+  _goversion_check := $(shell test -x $(OSS_HOME)/tools/bin/goversion || $(MAKE) -C $(OSS_HOME) tools/bin/goversion >&2)
+  VERSION := $(or $(VERSION),$(shell $(OSS_HOME)/tools/bin/goversion))
   $(if $(or $(filter v4.%,$(VERSION)),$(filter v0.0.0-%,$(VERSION))),\
     ,$(error VERSION variable is invalid: It must be v4.* or v0.0.0-$$tag, but is '$(VERSION)'))
   $(if $(findstring +,$(VERSION)),\
@@ -61,6 +67,7 @@ ifneq ($(MAKECMDGOALS),$(OSS_HOME)/build-aux/go-version.txt)
     $(info [make] CHART_VERSION=$(CHART_VERSION))
     $(info [make] ARCH=$(ARCH))
   endif
+endif
 endif
 
 # If SOURCE_DATE_EPOCH isn't set, AND the tree isn't dirty, then set
