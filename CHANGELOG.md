@@ -79,6 +79,14 @@ from the Helm charts.
 - Fix: The Helm chart now correctly restores the `HOST_IP` value for
   tracing providers (thanks, [Tenshin Higashi]!)
 
+- Fix: When the conversion webhook is active and Emissary is instructed
+  to wait for the webhooks at boot time, this is now completely internal
+  rather than requiring an extra init container.
+
+- Fix: When trying to use environment variables to tell the conversion
+  webhook not to manage aspects of its certificate, don't invert the
+  meaning of the environment variables.
+
 - Feature: Emissary now supports both `arm64` and `amd64` architectures
   using multiarch Docker images.
 
