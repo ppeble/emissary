@@ -11,7 +11,7 @@ as the Ambassador API Gateway.
 ## [4.0.0] TBD
 [4.0.0]: https://github.com/emissary-ingress/emissary/compare/v3.10.0...v4.0.0-rc.0
 
-_These release notes describe Emissary v4.0.0-rc.0._
+_These release notes describe Emissary v4.0.0-rc.2._
 
 ### Quickstart
 
@@ -88,7 +88,9 @@ from the Helm charts.
   (thanks, [Catalin Codreanu]!).
 
 - Fix: The Helm chart now correctly restores the `HOST_IP` value for
-  tracing providers (thanks, [Tenshin Higashi]!)
+  tracing providers (thanks, [Tenshin Higashi]!).
+
+- Fix: Update many dependencies and the Python interpreter to resolve CVEs (thanks, [Bhargav Joshi]!).
 
 - Fix: When the conversion webhook is active and Emissary is instructed
   to wait for the webhooks at boot time, this is now completely internal
@@ -118,6 +120,7 @@ from the Helm charts.
   (thanks, [Pier]!).
 
 [Abhay Bothra]: https://github.com/bothra90
+[Bhargav Joshi]: https://github.com/zencircle
 [Catalin Codreanu]: https://github.com/ccodreanu
 [Frederic Mereu]: https://github.com/fad3t
 [Jeremy Dinsel]: https://github.com/jdinsel-xealth
