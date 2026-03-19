@@ -146,7 +146,14 @@ jobs:
 
           # Use --snapshot for non-tag builds to avoid "SNAPSHOT" in version tags
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            goreleaser release --clean --skip=publish
+            # Set GORELEASER_CURRENT_TAG so GoReleaser uses the triggering tag.
+            # Without this, when multiple tags point to the same commit (e.g. both
+            # v4.0.0-rc.2 and v4.0.0), GoReleaser resolves the version via
+            # `git tag --sort=-version:refname --points-at HEAD`, which uses git's
+            # version sort (not semver). Git's sort puts v4.0.0-rc.2 *above* v4.0.0
+            # because extra segments rank higher, so GoReleaser would pick rc.2 and
+            # build/tag images as rc.2 instead of the intended final release tag.
+            GORELEASER_CURRENT_TAG="${{ github.ref_name }}" goreleaser release --clean --skip=publish
           else
             goreleaser release --clean --snapshot
           fi
