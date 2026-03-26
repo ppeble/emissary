@@ -40,11 +40,10 @@ See the full list of [features](https://emissary-ingress.dev/docs/4.0/about/feat
 Branches
 ========
 
-(If you are looking at this list on a branch other than `dev/v4/main`, it
+(If you are looking at this list on a branch other than `main`, it
 is likely to be wrong.)
 
-- [`dev/v4/main`](https://github.com/emissary-ingress/emissary/tree/dev/v4/main): branch for Emissary-ingress 4 development work (:heavy_check_mark: active development)
-   - When Emissary 4.0 ships, this branch will become `main`.
+- [`main`](https://github.com/emissary-ingress/emissary/tree/main): main Emissary-ingress development work (:heavy_check_mark: active development)
 
 - [`master`](https://github.com/emissary-ingress/emissary/tree/master): **frozen** branch for Emissary-ingress 3.10 (:heavy_check_mark: frozen)
 - [`release/v2.5`](https://github.com/emissary-ingress/emissary/tree/release/v2.5): **frozen** branch for Emissary-ingress 2.5 (:heavy_check_mark: frozen)

@@ -6,7 +6,7 @@ on:
     tags:
       - v4.** # Triggers on any tag like v4.0.0, v4.1.2-rc.1, etc.
     branches:
-      - dev/v4/main
+      - main
 
   pull_request:
     types: # The pull request events to listen for
@@ -14,7 +14,7 @@ on:
       - reopened
       - synchronize
     branches:
-      - dev/v4/main # The base branch that the pull request is targeting
+      - main # The base branch that the pull request is targeting
 
   workflow_dispatch: # Allows manual triggering of the workflow
     inputs:

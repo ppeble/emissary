@@ -8,10 +8,11 @@ as the Ambassador API Gateway.
 
 ## Emissary v4 Release Notes
 
-## [4.0.0] TBD
-[4.0.0]: https://github.com/emissary-ingress/emissary/compare/v3.10.0...v4.0.0-rc.0
+## [4.0.1] 26 March 2026
+[4.0.1]: https://github.com/emissary-ingress/emissary/compare/v3.10.0...v4.0.1
 
-_These release notes describe Emissary v4.0.0-rc.2._
+_v4.0.0 was never published due to a CI glitch. v4.0.1 is the correct GA
+version of Emissary._
 
 ### Quickstart
 
@@ -44,7 +45,7 @@ from the Helm charts.
   (which should not affect any Emissary users).
 
 - **BREAKING CHANGE**: The Helm chart and Emissary itself now have aligned
-  version numbers (e.g., use chart 4.0.0 to install Emissary 4.0.0).
+  version numbers (e.g., use chart 4.0.1 to install Emissary 4.0.1).
 
 - **BREAKING CHANGE**: Emissary's Helm charts are now available only from
   the GitHub Container Registry (GHCR):
