@@ -2,8 +2,11 @@ import logging
 from dataclasses import dataclass
 from typing import Optional
 from unittest.mock import MagicMock
-from unittest.mock import patch
+
 import pytest
+
+from ambassador.ir import IR
+from ambassador.ir.irbasemapping import IRBaseMapping
 
 from tests.utils import (
     Compile,
@@ -11,14 +14,9 @@ from tests.utils import (
     default_listener_manifests,
     default_tcp_listener_manifest,
     default_udp_listener_manifest,
-    logger,
     generate_istio_cert_delta,
-    generate_istio_saved_secret
+    logger,
 )
-
-from ambassador.ir import IR
-from ambassador.config import Config
-from test_acme_privatekey_secrets import MemorySecretHandler
 
 
 def http3_quick_start_manifests():
@@ -77,48 +75,71 @@ class TestIR:
                 assert case.expectedLog in caplog.text
 
 
-    @pytest.mark.parametrize("name, cache_entry, deltas, expected", [
-        (
-            "cached-secret-with-deltas",
-            generate_istio_saved_secret(),
-            [generate_istio_cert_delta()],
-            {"config_type": "incremental", "reset_cache": True, "invalidate_groups_for": []}
-        ),
-        (
-            "cached-secret-without-deltas",
-            generate_istio_saved_secret(),
-            None,
-            {"config_type": "complete", "reset_cache": True, "invalidate_groups_for": []}
-        ),
-        (
-            "null-cache-with-deltas",
-            None,
-            [generate_istio_cert_delta()],
-            {"config_type": "complete", "reset_cache": True, "invalidate_groups_for": []}
-        ),
-        (
-            "null-cache-without-deltas",
-            None,
-            None,
-            {"config_type": "complete", "reset_cache": True, "invalidate_groups_for": []}
-        )
-        
-        ]
+    @pytest.mark.parametrize(
+        "name, has_cache, deltas, expected",
+        [
+            # Regression for #4744: a cache exists but the snapshot had no deltas
+            # (e.g., Istio rotated the mTLS cert and the istio-certs Secret has
+            # no matching K8s resource to emit a delta for). We must force a
+            # complete reconfigure so the stale cache gets cleared.
+            (
+                "cached-no-deltas",
+                True,
+                [],
+                {"config_type": "complete", "reset_cache": True, "invalidate_groups_for": []},
+            ),
+            # Cache exists with a non-Mapping delta (e.g., a Secret update): there's
+            # nothing to invalidate incrementally, so it's still a complete reconfigure.
+            (
+                "cached-non-mapping-delta",
+                True,
+                [generate_istio_cert_delta()],
+                {"config_type": "complete", "reset_cache": True, "invalidate_groups_for": []},
+            ),
+            # Cache exists with a Mapping delta: invalidate incrementally.
+            (
+                "cached-mapping-delta",
+                True,
+                [{"kind": "Mapping", "metadata": {"name": "foo", "namespace": "bar"}}],
+                {
+                    "config_type": "incremental",
+                    "reset_cache": False,
+                    "invalidate_groups_for": [
+                        IRBaseMapping.make_cache_key("Mapping", "foo", "bar"),
+                    ],
+                },
+            ),
+            # No cache: always a complete reconfigure.
+            (
+                "no-cache-with-deltas",
+                False,
+                [generate_istio_cert_delta()],
+                {"config_type": "complete", "reset_cache": True, "invalidate_groups_for": []},
+            ),
+            (
+                "no-cache-no-deltas",
+                False,
+                [],
+                {"config_type": "complete", "reset_cache": True, "invalidate_groups_for": []},
+            ),
+        ],
     )
-    def test_check_deltas(self, name, cache_entry, deltas, expected, caplog):
+    def test_check_deltas(self, name, has_cache, deltas, expected, caplog):
         caplog.set_level(logging.DEBUG, logger="ambassador")
 
-        with patch("ambassador.cache.Cache") as cache:
-            cache.return_value = [cache_entry] if cache_entry is not None else None
-            fetcher = MagicMock()
-            fetcher.deltas = deltas
-            aconfig = Config()
-            secret_handler = MemorySecretHandler(logger, "/tmp/unit-test-source-root", "/tmp/unit-test-cache-dir", "0")
-            ir = IR(aconf=aconfig, file_checker=lambda path: True, secret_handler=secret_handler)
-            config_type, reset_cache, invalidate_groups_for = ir.check_deltas(logger=logger, fetcher=fetcher, cache=cache)
+        fetcher = MagicMock()
+        fetcher.deltas = deltas
+        cache = MagicMock() if has_cache else None
 
-            if (cache_entry and deltas) is not None:
-                cache.dump.assert_called()
-                assert config_type == expected["config_type"]
-                assert reset_cache == expected["reset_cache"]
-                assert invalidate_groups_for == expected["invalidate_groups_for"]
+        config_type, reset_cache, invalidate_groups_for = IR.check_deltas(
+            logger=logger, fetcher=fetcher, cache=cache,
+        )
+
+        assert config_type == expected["config_type"]
+        assert reset_cache == expected["reset_cache"]
+        assert invalidate_groups_for == expected["invalidate_groups_for"]
+
+        # cache.dump is only invoked when we actually walk deltas -- i.e. when
+        # we had both a cache and at least one delta to consider.
+        if has_cache and deltas:
+            cache.dump.assert_called_once()

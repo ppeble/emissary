@@ -175,9 +175,10 @@ class Builder:
             self.logger, fetcher, self.cache
         )
 
-        # For the tests in this file, we should see cache resets and full reconfigurations
-        # IFF we have no cache.
-
+        # With no cache we always do a complete reconfigure and reset. With a
+        # cache, it's only an incremental reconfigure when we actually have
+        # deltas to invalidate against -- an empty-delta snapshot forces a
+        # complete reconfigure so we flush any stale entries (see #4744).
         if self.cache is None:
             assert (
                 config_type == "complete"
@@ -185,13 +186,25 @@ class Builder:
             assert (
                 reset_cache
             ), "check_deltas with no cache does not want to reset the cache, but it should"
+        elif not fetcher.deltas:
+            assert (
+                config_type == "complete"
+            ), "check_deltas with a cache and no deltas should force a complete reconfigure"
+            assert (
+                reset_cache
+            ), "check_deltas with a cache and no deltas should reset the cache"
         else:
             assert (
                 config_type == "incremental"
-            ), "check_deltas with a cache wants a complete reconfiguration, which it shouldn't"
+            ), "check_deltas with a cache and deltas wants a complete reconfiguration, which it shouldn't"
             assert (
                 not reset_cache
-            ), "check_deltas with a cache wants to reset the cache, which it shouldn't"
+            ), "check_deltas with a cache and deltas wants to reset the cache, which it shouldn't"
+
+        # Mirror diagd: when reset_cache is set, swap in a fresh Cache before
+        # building the IR so we don't carry stale entries into the new config.
+        if reset_cache and self.cache is not None:
+            self.cache = Cache(self.logger)
 
         # Once that's done, compile the IR.
         ir = IR(

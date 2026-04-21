@@ -151,16 +151,14 @@ class IR:
         to_invalidate: List[str] = []
         invalidate_groups_for: List[str] = []
 
-        # OK. If we don't have a cache and there are no deltas, just skip all this crap.
-        if (cache and fetcher.deltas) is not None:
-            # We have a cache and deltas is non null. Start by assuming that we'll need to reset it,
-            # unless there are no deltas at all.
-            reset_cache = len(fetcher.deltas) > 0
-
-            # Yes. We're going to walk over them all and assemble a list
-            # of things to delete and a count of errors while processing our
-            # list.
-
+        # If we don't have a cache, or there are no deltas, there's nothing to do here --
+        # the defaults above (complete reconfigure, reset the cache) are what we want.
+        # Note that fetcher.deltas is always a list: it starts as [] and is reassigned
+        # from watt_dict.get("Deltas", []), so we check truthiness rather than `is not None`.
+        if (cache is not None) and fetcher.deltas:
+            # We have a cache and at least one delta. Walk over all the deltas and
+            # assemble a list of things to delete and a count of errors while processing
+            # our list.
             delta_errors = 0
 
             for delta in fetcher.deltas:
@@ -191,24 +189,15 @@ class IR:
                         # If we're invalidating the Mapping, we need to invalidate its Group.
                         invalidate_groups_for.append(key)
 
-            # OK. If we have things to invalidate, and we have NO ERRORS...
+            # If we have things to invalidate and we have NO ERRORS, we can invalidate
+            # those things incrementally instead of resetting the whole cache.
             if to_invalidate and not delta_errors:
-                # ...then we can invalidate all those things instead of clearing the cache.
                 reset_cache = False
+                config_type = "incremental"
 
                 for key in to_invalidate:
                     logger.debug(f"Delta: invalidating {key}")
                     cache.invalidate(key)
-
-            # When all is said and done, it's an incremental if we don't need to reset
-            # the cache.
-            if not reset_cache:
-                config_type = "incremental"
-
-                # This is _not_ an incremental reconfigure. Reset the cache...
-            else:
-                # OK, we're doing an incremental reconfigure.
-                config_type = "incremental"
 
             cache.dump("Checking incoming deltas (reset_cache %s)", reset_cache)
 
