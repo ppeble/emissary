@@ -19,6 +19,17 @@ as the Ambassador API Gateway.
 [1.37.1 release notes]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.37/v1.37.1
 [1.37.2 release notes]: https://www.envoyproxy.io/docs/envoy/latest/version_history/v1.37/v1.37.2
 
+- Fix: `IR.check_deltas` now forces a complete reconfigure whenever the
+  cache is present but the incoming snapshot has no deltas. Previously,
+  an empty-delta snapshot with a cached entry kept the stale entry around
+  until another delta happened to arrive, which caused the Istio mTLS
+  cert-rotation failure described in [#4744] (the rotated `istio-certs`
+  Secret never produces a delta, since it doesn't map to a K8s resource)
+  (thanks, [Jonathan Bailey]!).
+
+[#4744]: https://github.com/emissary-ingress/emissary/issues/4744
+[Jonathan Bailey]: https://github.com/jonathanelbailey
+
 ## [4.0.1] 26 March 2026
 [4.0.1]: https://github.com/emissary-ingress/emissary/compare/v3.10.0...v4.0.1
 
