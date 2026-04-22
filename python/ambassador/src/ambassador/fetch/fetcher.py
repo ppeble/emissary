@@ -250,8 +250,11 @@ class ResourceFetcher:
         try:
             watt_dict = parse_json(serialization)
 
-            # Grab deltas if they're present...
-            self.deltas = watt_dict.get("Deltas", [])
+            # The Go snapshot struct emits `"Deltas": null` for a nil slice (no
+            # `omitempty` on the field), so we can't rely on dict.get's default as it
+            # it only fires on a missing key, not a present-but-null value. The `or []`
+            # coerces null to [].
+            self.deltas = watt_dict.get("Deltas") or []
 
             # ...then it's off to deal with Kubernetes.
             watt_k8s = watt_dict.get("Kubernetes", {})

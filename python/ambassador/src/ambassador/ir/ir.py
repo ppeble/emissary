@@ -151,10 +151,10 @@ class IR:
         to_invalidate: List[str] = []
         invalidate_groups_for: List[str] = []
 
-        # If we don't have a cache, or there are no deltas, there's nothing to do here --
-        # the defaults above (complete reconfigure, reset the cache) are what we want.
-        # Note that fetcher.deltas is always a list: it starts as [] and is reassigned
-        # from watt_dict.get("Deltas", []), so we check truthiness rather than `is not None`.
+        # If we don't have a cache, or there are no deltas, fall through with the
+        # defaults above (complete reconfigure, reset the cache). The `fetcher.deltas`
+        # is always a list here and truthiness handles both the "no cache" and
+        # "empty deltas" cases.
         if (cache is not None) and fetcher.deltas:
             # We have a cache and at least one delta. Walk over all the deltas and
             # assemble a list of things to delete and a count of errors while processing
