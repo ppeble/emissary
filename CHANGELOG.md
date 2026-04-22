@@ -27,9 +27,6 @@ as the Ambassador API Gateway.
   Secret never produces a delta, since it doesn't map to a K8s resource)
   (thanks, [Jonathan Bailey]!).
 
-[#4744]: https://github.com/emissary-ingress/emissary/issues/4744
-[Jonathan Bailey]: https://github.com/jonathanelbailey
-
 ## [4.0.1] 26 March 2026
 [4.0.1]: https://github.com/emissary-ingress/emissary/compare/v3.10.0...v4.0.1
 
