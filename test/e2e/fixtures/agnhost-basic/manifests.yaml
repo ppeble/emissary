@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agnhost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agnhost
+  template:
+    metadata:
+      labels:
+        app: agnhost
+    spec:
+      containers:
+        - name: agnhost
+          image: registry.k8s.io/e2e-test-images/agnhost:2.63.0
+          args: ["netexec", "--http-port=8080"]
+          ports:
+            - containerPort: 8080
+              name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: agnhost
+spec:
+  selector:
+    app: agnhost
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: getambassador.io/v3alpha1
+kind: Mapping
+metadata:
+  name: agnhost-backend
+spec:
+  hostname: "*"
+  prefix: /backend/
+  service: agnhost

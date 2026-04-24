@@ -107,10 +107,12 @@ jobs:
     name: Test Images
     needs:
       - build-images
+      - build-charts
     uses: ./.github/workflows/test-images.yaml
     with:
       ref: ${{ github.ref }}
       artifact-bundle-prefix: images-${{ github.sha }}
+      version: ${{ needs.build-images.outputs.version }}
 
   release:
     name: Release

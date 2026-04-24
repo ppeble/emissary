@@ -97,6 +97,7 @@ include $(OSS_HOME)/build-aux/deps.mk
 include $(OSS_HOME)/build-aux/main.mk
 include $(OSS_HOME)/build-aux/builder.mk
 include $(OSS_HOME)/build-aux/check.mk
+include $(OSS_HOME)/build-aux/e2e.mk
 include $(OSS_HOME)/releng/release.mk
 
 $(call module,ambassador,$(OSS_HOME))

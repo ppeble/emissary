@@ -13,6 +13,12 @@ on:
         type: string
         required: true
         description: Prefix for artifact bundle from build workflow
+      version:
+        type: string
+        required: true
+        description: >-
+          Image version built by build-images (used as the chart image tag
+          override so Emissary runs the locally-loaded image).
 
 permissions:
   contents: read
@@ -81,18 +87,54 @@ jobs:
 
           echo "Images imported into k3d cluster"
 
-      - name: Test Images
+      - name: Download Helm Chart Artifacts
+        uses: actions/download-artifact@v6
+        with:
+          name: charts
+          path: ${{ github.workspace }}/artifacts/charts
+
+      - name: Install Emissary CRDs
         run: |
-          # Verify k3d cluster is running
-          kubectl cluster-info
+          set -euo pipefail
+          helm install emissary-crds \
+            ${{ github.workspace }}/artifacts/charts/emissary-crds-*.tgz \
+            --namespace emissary-system \
+            --create-namespace \
+            --wait --timeout 3m
+
+      - name: Install Emissary-ingress
+        env:
+          VERSION: ${{ inputs.version }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          kubectl create namespace emissary
+          helm install emissary-ingress \
+            ${{ github.workspace }}/artifacts/charts/emissary-ingress-*.tgz \
+            --namespace emissary \
+            --set image.repository=ghcr.io/emissary-ingress/emissary \
+            --set image.tag="${VERSION}-${ARCH}" \
+            --set image.pullPolicy=IfNotPresent \
+            --set replicaCount=1 \
+            --set createDefaultListeners=true \
+            --wait --timeout 3m
+          kubectl -n emissary rollout status deploy/emissary-ingress --timeout=2m
+
+      - name: Run E2E Fixtures
+        env:
+          NAMESPACE: emissary
+          GATEWAY_URL: http://localhost
+        run: |
+          bash ${{ github.workspace }}/test/e2e/run.sh
+
+      - name: Dump Diagnostics on Failure
+        if: failure()
+        run: |
           kubectl get nodes
-
-          # List images available in the k3d cluster
-          echo "Images available in k3d cluster:"
-          docker exec k3d-test-cluster-${{ matrix.arch }}-server-0 crictl images
-
-          # Add your test commands here
-          echo "Would test ${{ matrix.arch }} images..."
+          kubectl get ns
+          kubectl -n emissary get all
+          kubectl -n emissary describe pod -l app.kubernetes.io/name=emissary-ingress || true
+          kubectl -n emissary logs -l app.kubernetes.io/name=emissary-ingress --tail=500 || true
 
       - name: Cleanup k3d cluster
         if: always()
