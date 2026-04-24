@@ -37,6 +37,10 @@ Everything is driven through `make` targets defined in `build-aux/e2e.mk`.
   ```
 - `k3d`, `kubectl`, and `helm` are fetched automatically into
   `tools/bin/` the first time they're needed.
+- `grpcurl` on your `PATH` if you want to run the `grpc-basic` fixture locally
+  (`brew install grpcurl` on macOS, or a release binary from
+  [fullstorydev/grpcurl](https://github.com/fullstorydev/grpcurl/releases)).
+  CI installs it automatically.
 
 ### Full cycle from scratch
 
