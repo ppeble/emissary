@@ -2,13 +2,6 @@ include $(dir $(lastword $(MAKEFILE_LIST)))tools.mk
 
 # End-to-end tests against a local k3d cluster.
 #
-# Typical flows:
-#   make e2e/local         - full cycle from scratch: cluster, build, install, run
-#   make e2e/run           - re-run fixtures against the already-deployed cluster
-#   make e2e/install       - (re)install Emissary; assumes `make images charts` was run
-#   make e2e/cluster-up    - create the k3d cluster (idempotent)
-#   make e2e/cluster-down  - delete the k3d cluster
-#
 # Prerequisites:
 #   - Python venv active (`source .venv/bin/activate`) OR run via `uv run make ...`
 #     so that Makefile invocations of `python3` resolve the project's deps.
@@ -47,8 +40,6 @@ e2e/cluster-up: $(tools/k3d) $(tools/kubectl)
 e2e/cluster-down: $(tools/k3d)
 	$(tools/k3d) cluster delete $(E2E_CLUSTER) || true
 
-# Import the locally-built images into the k3d cluster. Assumes `make images`
-# has already placed them into the local docker daemon.
 .PHONY: e2e/load
 e2e/load: $(tools/k3d)
 	@if ! test -s $(E2E_VERSION_FILE); then \
@@ -89,10 +80,6 @@ e2e/run:
 # Override by setting E2E_LOCAL_VERSION on the command line if needed.
 E2E_LOCAL_VERSION ?= v4.0.0-local
 
-# Full cycle from scratch. Sub-make calls guarantee ordering even under -j.
-# The VERSION override is only applied to e2e/install (where it affects chart
-# filenames and labels); `make images` uses goreleaser's --snapshot versioning
-# independently, and e2e/load reads the actual built tag from python/ambassador.version.
 .PHONY: e2e/local
 e2e/local:
 	$(MAKE) e2e/cluster-up
