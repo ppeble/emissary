@@ -61,6 +61,7 @@ jobs:
             --port "80:80@loadbalancer" \
             --port "443:443@loadbalancer" \
             --port "6789:6789@loadbalancer" \
+            --k3s-arg "--disable=traefik@server:*" \
             --wait
 
           # Verify cluster is ready
