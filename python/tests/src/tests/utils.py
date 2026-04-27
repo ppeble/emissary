@@ -374,3 +374,12 @@ def create_crl_pem_b64(issuerCert, issuerKey, revokedCerts):
 
     crl = crl_builder.sign(private_key=key, algorithm=hashes.SHA256())
     return b64encode(crl.public_bytes(serialization.Encoding.PEM)).decode("utf-8")
+
+
+def generate_istio_cert_delta(delta_type="update"):
+    return {
+        "kind": "Secret",
+        "name": "istio-certs",
+        "namespace": "ambassador",
+        "deltaType": delta_type,
+    }

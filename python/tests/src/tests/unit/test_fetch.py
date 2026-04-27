@@ -478,5 +478,28 @@ def test_sort(deps: DependencyManager) -> None:
     assert deps.sorted_watt_keys() == ["secret", "service", "ingressclasses"]
 
 
+@pytest.mark.parametrize(
+    "name, payload, expected",
+    [
+        # Regression for #4744: the Go snapshot struct lacks `omitempty` on Deltas,
+        # so a nil slice marshals to `"Deltas": null`. dict.get("Deltas", []) returns
+        # None in that case. For clarity we want it to always return `[]` in all cases.
+        ("null", '{"Kubernetes": {}, "Deltas": null}', []),
+        ("empty-list", '{"Kubernetes": {}, "Deltas": []}', []),
+        ("missing", '{"Kubernetes": {}}', []),
+        (
+            "with-items",
+            '{"Kubernetes": {}, "Deltas": [{"kind":"Mapping","metadata":{"name":"x","namespace":"y"}}]}',
+            [{"kind": "Mapping", "metadata": {"name": "x", "namespace": "y"}}],
+        ),
+    ],
+)
+def test_parse_watt_deltas_is_always_a_list(name, payload, expected):
+    fetcher = ResourceFetcher(logger, Config())
+    fetcher.parse_watt(payload, finalize=False)
+    assert isinstance(fetcher.deltas, list)
+    assert fetcher.deltas == expected
+
+
 if __name__ == "__main__":
     pytest.main(sys.argv)

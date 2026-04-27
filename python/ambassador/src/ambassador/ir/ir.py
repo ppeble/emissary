@@ -151,66 +151,53 @@ class IR:
         to_invalidate: List[str] = []
         invalidate_groups_for: List[str] = []
 
-        # OK. If we don't have a cache, just skip all this crap.
-        if cache is not None:
-            # We have a cache. Start by assuming that we'll need to reset it,
-            # unless there are no deltas at all.
-            reset_cache = len(fetcher.deltas) > 0
+        # If we don't have a cache, or there are no deltas, fall through with the
+        # defaults above (complete reconfigure, reset the cache). The `fetcher.deltas`
+        # is always a list here and truthiness handles both the "no cache" and
+        # "empty deltas" cases.
+        if (cache is not None) and fetcher.deltas:
+            # We have a cache and at least one delta. Walk over all the deltas and
+            # assemble a list of things to delete and a count of errors while processing
+            # our list.
+            delta_errors = 0
 
-            # Next up: are there any deltas?
-            if fetcher.deltas:
-                # Yes. We're going to walk over them all and assemble a list
-                # of things to delete and a count of errors while processing our
-                # list.
+            for delta in fetcher.deltas:
+                logger.debug(f"Delta: {delta}")
 
-                delta_errors = 0
+                # The "kind" of a Delta must be a string; assert that to make
+                # mypy happy.
 
-                for delta in fetcher.deltas:
-                    logger.debug(f"Delta: {delta}")
+                delta_kind = delta["kind"]
+                assert isinstance(delta_kind, str)
 
-                    # The "kind" of a Delta must be a string; assert that to make
-                    # mypy happy.
+                # Only worry about Mappings and TCPMappings right now.
+                if (delta_kind == "Mapping") or (delta_kind == "TCPMapping"):
+                    # XXX C'mon, mypy, is this cast really necessary?
+                    metadata = typecast(Dict[str, str], delta.get("metadata", {}))
+                    name = metadata.get("name", "")
+                    namespace = metadata.get("namespace", "")
 
-                    delta_kind = delta["kind"]
-                    assert isinstance(delta_kind, str)
+                    if not name or not namespace:
+                        # This is an error.
+                        delta_errors += 1
 
-                    # Only worry about Mappings and TCPMappings right now.
-                    if (delta_kind == "Mapping") or (delta_kind == "TCPMapping"):
-                        # XXX C'mon, mypy, is this cast really necessary?
-                        metadata = typecast(Dict[str, str], delta.get("metadata", {}))
-                        name = metadata.get("name", "")
-                        namespace = metadata.get("namespace", "")
+                        logger.error(f"Delta object needs name and namespace: {delta}")
+                    else:
+                        key = IRBaseMapping.make_cache_key(delta_kind, name, namespace)
+                        to_invalidate.append(key)
 
-                        if not name or not namespace:
-                            # This is an error.
-                            delta_errors += 1
+                        # If we're invalidating the Mapping, we need to invalidate its Group.
+                        invalidate_groups_for.append(key)
 
-                            logger.error(f"Delta object needs name and namespace: {delta}")
-                        else:
-                            key = IRBaseMapping.make_cache_key(delta_kind, name, namespace)
-                            to_invalidate.append(key)
-
-                            # If we're invalidating the Mapping, we need to invalidate its Group.
-                            invalidate_groups_for.append(key)
-
-                # OK. If we have things to invalidate, and we have NO ERRORS...
-                if to_invalidate and not delta_errors:
-                    # ...then we can invalidate all those things instead of clearing the cache.
-                    reset_cache = False
-
-                    for key in to_invalidate:
-                        logger.debug(f"Delta: invalidating {key}")
-                        cache.invalidate(key)
-
-            # When all is said and done, it's an incremental if we don't need to reset
-            # the cache.
-            if not reset_cache:
+            # If we have things to invalidate and we have NO ERRORS, we can invalidate
+            # those things incrementally instead of resetting the whole cache.
+            if to_invalidate and not delta_errors:
+                reset_cache = False
                 config_type = "incremental"
 
-                # This is _not_ an incremental reconfigure. Reset the cache...
-            else:
-                # OK, we're doing an incremental reconfigure.
-                config_type = "incremental"
+                for key in to_invalidate:
+                    logger.debug(f"Delta: invalidating {key}")
+                    cache.invalidate(key)
 
             cache.dump("Checking incoming deltas (reset_cache %s)", reset_cache)
 
