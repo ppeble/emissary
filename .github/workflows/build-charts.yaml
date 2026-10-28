@@ -32,7 +32,7 @@ permissions:
 jobs:
   build-charts:
     name: Build Helm Charts
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     outputs:
       artifact-id: ${{ steps.upload-chart-artifacts.outputs.artifact-id }}

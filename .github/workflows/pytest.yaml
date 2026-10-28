@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   pytest:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     name: Run Python Tests
     steps:
       - name: Checkout Repo
