@@ -68,6 +68,11 @@ on:
 permissions:
   contents: read
 
+env:
+  # Both actions install the current release when no version is given.
+  BUILDX_VERSION: v0.38.1
+  GORELEASER_VERSION: v2.19.0
+
 jobs:
   build-images:
     name: Build and Save ${{ matrix.arch }} Images
@@ -112,13 +117,15 @@ jobs:
         name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         if: ${{ steps.install-deps.outcome == 'success' }}
+        with:
+          version: ${{ env.BUILDX_VERSION }}
 
       - id: install-goreleaser
         name: Install GoReleaser
         if: ${{ steps.setup-docker-buildx.outcome == 'success' }}
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: ~> v2
+          version: ${{ env.GORELEASER_VERSION }}
           install-only: true
           distribution: goreleaser
 
