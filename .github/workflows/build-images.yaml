@@ -103,7 +103,7 @@ jobs:
     steps:
       - id: checkout-repo
         name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
           fetch-depth: 0
@@ -115,7 +115,7 @@ jobs:
 
       - id: setup-docker-buildx
         name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
         if: ${{ steps.install-deps.outcome == 'success' }}
         with:
           version: ${{ env.BUILDX_VERSION }}
@@ -123,7 +123,7 @@ jobs:
       - id: install-goreleaser
         name: Install GoReleaser
         if: ${{ steps.setup-docker-buildx.outcome == 'success' }}
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@a4f02ab5355a589de60d917a659ce617ed19b3de # v7.3.0
         with:
           version: ${{ env.GORELEASER_VERSION }}
           install-only: true
@@ -210,7 +210,7 @@ jobs:
         name: Upload Docker Image Artifacts
         if: ${{ steps.save-image-tarballs.outcome == 'success' }}
         continue-on-error: ${{ inputs.debug }}
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ inputs.artifact-bundle-prefix }}-${{ matrix.arch }}
           retention-days: 7
