@@ -13,6 +13,12 @@ inputs:
       Install Python
     required: false
     default: "true"
+  uv-version:
+    description: |
+      uv release to install. The installer at astral.sh/uv/install.sh
+      installs whatever is current, so the version is part of the URL.
+    required: false
+    default: "0.13.6"
 
 env:
   DEBIAN_FRONTEND: noninteractive
@@ -83,13 +89,16 @@ runs:
       shell: bash
       if: ${{ inputs.install-python == 'true' }}
       env:
+        UV_VERSION: ${{ inputs.uv-version }}
         UV_UNMANAGED_INSTALL: /usr/bin
       run: |
         set -euo pipefail
 
         # install uv
         # sudo-rs (Ubuntu 26.04 runners) ignores -E, so pass the variable explicitly.
-        curl -fsSL https://astral.sh/uv/install.sh | sudo env UV_UNMANAGED_INSTALL="$UV_UNMANAGED_INSTALL" bash
+        curl -fsSL "https://astral.sh/uv/${UV_VERSION}/install.sh" | sudo env UV_UNMANAGED_INSTALL="$UV_UNMANAGED_INSTALL" bash
+        uv --version
 
-        # install Python requirements
+        # install Python requirements; the interpreter comes from
+        # requires-python in pyproject.toml, not from the runner
         uv sync --dev
