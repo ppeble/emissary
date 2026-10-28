@@ -191,10 +191,12 @@ $(tools/ct).d/dir.txt: $(tools.srcdir)/ct/pin.go $(tools.srcdir)/ct/go.mod
 tools/ct.yamllint-version = 1.38.0
 # The venv is built from the project interpreter (requires-python in
 # pyproject.toml) so lint results do not depend on the host's python3.
+# --no-config keeps pyproject's [tool.uv.pip] settings (all-extras,
+# require-hashes) out of this install; they are for the project venv.
 $(tools/ct).d/venv: %/venv: %/dir.txt $(OSS_HOME)/.venv
 	rm -rf $@
 	uv venv --python $(OSS_HOME)/.venv/bin/python $@
-	uv pip install --python $@ \
+	uv pip install --no-config --python $@ \
 	  yamllint==$(tools/ct.yamllint-version) \
 	  yamale==$$(sed -n 's/ARG yamale_version=//p' "$$(cat $<)/Dockerfile") \
 	  || (rm -rf $@; exit 1)
