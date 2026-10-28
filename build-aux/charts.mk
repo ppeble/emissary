@@ -53,18 +53,19 @@ helmify-crds: $(OSS_HOME)/.venv $(OSS_HOME)/_generate.tmp/crds
 		--output $(CHART_DIR)/emissary-crds/templates \
 		$(patsubst %,$(OSS_HOME)/_generate.tmp/crds/getambassador.io_%,$(CRD_FILES))
 
-$(CRDS_CHART): version-check $(CHART_DIR)/emissary-crds helmify-crds
-	( cd $(CHART_DIR) && bash $(BUILD_CHART) emissary-crds $(CHART_VERSION) $(IMAGE_REPO) $(CHART_DIR) )
+# build-chart calls `helm` by name, so the pinned one is put first in PATH.
+$(CRDS_CHART): version-check $(CHART_DIR)/emissary-crds helmify-crds $(tools/helm)
+	( cd $(CHART_DIR) && PATH="$(abspath $(tools.bindir)):$$PATH" bash $(BUILD_CHART) emissary-crds $(CHART_VERSION) $(IMAGE_REPO) $(CHART_DIR) )
 	ls -l $(CRDS_CHART)
 
-$(EMISSARY_CHART): version-check $(CHART_DIR)/emissary-ingress
-	( cd $(CHART_DIR) && bash $(BUILD_CHART) emissary-ingress $(CHART_VERSION) $(IMAGE_REPO) $(CHART_DIR) )
+$(EMISSARY_CHART): version-check $(CHART_DIR)/emissary-ingress $(tools/helm)
+	( cd $(CHART_DIR) && PATH="$(abspath $(tools.bindir)):$$PATH" bash $(BUILD_CHART) emissary-ingress $(CHART_VERSION) $(IMAGE_REPO) $(CHART_DIR) )
 	ls -l $(EMISSARY_CHART)
 
-push-chart: version-check helm-registry-check
+push-chart: version-check helm-registry-check $(tools/helm)
 	if [ -n "$(HELM_REGISTRY)" ]; then \
-		helm push $(CRDS_CHART) $(HELM_REGISTRY); \
-		helm push $(EMISSARY_CHART) $(HELM_REGISTRY); \
+		$(tools/helm) push $(CRDS_CHART) $(HELM_REGISTRY); \
+		$(tools/helm) push $(EMISSARY_CHART) $(HELM_REGISTRY); \
 	else \
 		echo "HELM_REGISTRY not set, not pushing"; \
 	fi

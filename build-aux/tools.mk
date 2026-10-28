@@ -118,14 +118,14 @@ $(tools.bindir)/telepresence: $(tools.mk)
 	chmod a+x $@
 
 tools/k3d   = $(tools.bindir)/k3d
-K3D_VERSION = 5.6.0
+K3D_VERSION = 5.9.0
 $(tools.bindir)/k3d: $(tools.mk)
 	mkdir -p $(@D)
 	curl -s --fail -L https://github.com/rancher/k3d/releases/download/v$(K3D_VERSION)/k3d-$(GOHOSTOS)-$(GOHOSTARCH) -o $@
 	chmod a+x $@
 
 tools/chainsaw   = $(tools.bindir)/chainsaw
-CHAINSAW_VERSION = 0.2.14
+CHAINSAW_VERSION = 0.2.15
 $(tools.bindir)/chainsaw: $(tools.mk)
 	mkdir -p $(@D)
 	curl -s --fail -L https://github.com/kyverno/chainsaw/releases/download/v$(CHAINSAW_VERSION)/chainsaw_$(GOHOSTOS)_$(GOHOSTARCH).tar.gz \
@@ -153,14 +153,22 @@ $(tools.bindir)/protoc-gen-grpc-web: $(tools.mk)
 	chmod 755 $@
 
 tools/kubectl = $(tools.bindir)/kubectl
-KUBECTL_VERSION ?= 1.35.6
+KUBECTL_VERSION ?= 1.37.2
 $(tools.bindir)/kubectl: $(tools.mk)
 	mkdir -p $(@D)
 	curl -o $@ -L --fail https://dl.k8s.io/release/v$(KUBECTL_VERSION)/bin/$(GOHOSTOS)/$(GOHOSTARCH)/kubectl
 	chmod 755 $@
 
+tools/helm   = $(tools.bindir)/helm
+HELM_VERSION = 4.3.1
+$(tools.bindir)/helm: $(tools.mk)
+	mkdir -p $(@D)
+	curl -s --fail -L https://get.helm.sh/helm-v$(HELM_VERSION)-$(GOHOSTOS)-$(GOHOSTARCH).tar.gz \
+	    | tar -xz -C $(@D) --strip-components=1 $(GOHOSTOS)-$(GOHOSTARCH)/helm
+	chmod a+x $@
+
 tools/ct = $(tools.bindir)/ct
-$(tools/ct): $(tools.bindir)/%: $(tools.srcdir)/%/wrap.sh $(tools/ct).d/bin/ct $(tools/ct).d/bin/kubectl $(tools/ct).d/venv $(tools/ct).d/home
+$(tools/ct): $(tools.bindir)/%: $(tools.srcdir)/%/wrap.sh $(tools/ct).d/bin/ct $(tools/ct).d/bin/kubectl $(tools/ct).d/bin/helm $(tools/ct).d/venv $(tools/ct).d/home
 	install $< $@
 $(tools/ct).d/bin/ct: $(tools.srcdir)/ct/pin.go $(tools.srcdir)/ct/go.mod
 	@PS4=; set -ex; {\
@@ -172,16 +180,21 @@ $(tools/ct).d/bin/ct: $(tools.srcdir)/ct/pin.go $(tools.srcdir)/ct/go.mod
 $(tools/ct).d/bin/kubectl: $(tools/kubectl)
 	mkdir -p $(@D)
 	ln -s ../../kubectl $@
+$(tools/ct).d/bin/helm: $(tools/helm)
+	mkdir -p $(@D)
+	ln -s ../../helm $@
 $(tools/ct).d/dir.txt: $(tools.srcdir)/ct/pin.go $(tools.srcdir)/ct/go.mod
 	mkdir -p $(@D)
 	cd $(<D) && GOFLAGS='-mod=readonly' go list -f='{{ .Module.Dir }}' "$$(sed -En 's,^import _ "(.*)".*,\1,p' pin.go)" >$(abspath $@)
 # ct's Dockerfile pins yamale but takes yamllint from the distro, so
 # yamllint is pinned here to keep lint results stable across runners.
 tools/ct.yamllint-version = 1.38.0
-$(tools/ct).d/venv: %/venv: %/dir.txt
+# The venv is built from the project interpreter (requires-python in
+# pyproject.toml) so lint results do not depend on the host's python3.
+$(tools/ct).d/venv: %/venv: %/dir.txt $(OSS_HOME)/.venv
 	rm -rf $@
-	python3 -m venv $@
-	$@/bin/pip3 install \
+	uv venv --python $(OSS_HOME)/.venv/bin/python $@
+	uv pip install --python $@ \
 	  yamllint==$(tools/ct.yamllint-version) \
 	  yamale==$$(sed -n 's/ARG yamale_version=//p' "$$(cat $<)/Dockerfile") \
 	  || (rm -rf $@; exit 1)
