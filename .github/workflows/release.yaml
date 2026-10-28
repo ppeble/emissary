@@ -65,7 +65,7 @@ permissions:
 jobs:
   release:
     name: Create GitHub Release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
 
     outputs:
       pushed-charts: ${{ steps.push-artifacts.outputs.pushed-charts }}
