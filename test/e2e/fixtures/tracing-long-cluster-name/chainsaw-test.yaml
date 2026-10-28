@@ -20,6 +20,8 @@ spec:
         - apply:
             file: manifests.yaml
         - assert:
+            # Several zipkin JVMs start at once on a CI runner.
+            timeout: 4m
             resource:
               apiVersion: apps/v1
               kind: Deployment
